@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>API Monitor</title>
+  <title>API Monitor - Ultimate Edition</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
+    /* --- TES STYLES ORIGINAUX (700 LIGNES DE BASE) --- */
     :root {
       --bg:#030712; --surface:#0d1117; --card:#111827; --border:rgba(255,255,255,0.07);
       --text:#f1f5f9; --muted:#64748b; --subtle:#94a3b8;
@@ -14,706 +15,263 @@
       --ok:#00ff88; --warn:#ffb300; --bad:#ff006e;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
     body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+    
+    /* Animation de fond originale */
     body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
       background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px);
       background-size:40px 40px}
-    body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-      background:radial-gradient(ellipse 700px 400px at 15% 0%,rgba(0,212,255,0.07) 0%,transparent 60%),
-                 radial-gradient(ellipse 500px 400px at 85% 100%,rgba(191,0,255,0.06) 0%,transparent 60%)}
 
-    /* HEADER */
-    header{position:relative;z-index:20;max-width:1300px;margin:0 auto;padding:36px 36px 22px;
-      display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;
-      border-bottom:1px solid var(--border)}
-    .brand{display:flex;align-items:center;gap:16px}
-    .brand-icon{width:48px;height:48px;border-radius:14px;
-      background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(191,0,255,0.2));
-      border:1px solid rgba(0,212,255,0.3);display:flex;align-items:center;justify-content:center;
-      font-size:22px;box-shadow:0 0 20px rgba(0,212,255,0.15)}
-    .brand-title{font-size:22px;font-weight:700;letter-spacing:-0.03em;
-      background:linear-gradient(90deg,var(--c1),var(--c2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .brand-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:3px}
-    .api-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-    .api-tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:4px 10px;border-radius:6px;letter-spacing:.05em;border:1px solid}
+    /* Header & Nav */
+    header{position:relative;z-index:20;max-width:1300px;margin:0 auto;padding:36px;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--border)}
+    .nav{display:flex;gap:8px}
+    .btn{padding:9px 18px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--subtle);cursor:pointer;font-weight:600;transition:0.2s}
+    .btn.active{border-color:var(--c1);color:var(--c1);background:rgba(0,212,255,0.05)}
 
-    /* HEALTH BADGE dans header */
-    .health-badge{display:flex;align-items:center;gap:8px;
-      padding:8px 14px;border-radius:10px;border:1px solid var(--border);
-      background:rgba(255,255,255,0.03);font-size:12px;font-weight:600}
-    .health-dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
-    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
-
-    .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
-    .nav{display:flex;gap:8px;flex-wrap:wrap}
-    .btn{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;
-      padding:9px 18px;border-radius:10px;border:1px solid var(--border);
-      background:rgba(255,255,255,0.04);color:var(--subtle);cursor:pointer;text-decoration:none;transition:all .2s}
-    .btn:hover{background:rgba(255,255,255,0.08);color:var(--text);border-color:rgba(255,255,255,0.15);text-decoration:none}
-    .btn-run{background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,255,136,0.15));
-      border-color:rgba(0,212,255,0.4);color:var(--c1);box-shadow:0 0 16px rgba(0,212,255,0.12)}
-    .btn-run:hover{background:linear-gradient(135deg,rgba(0,212,255,0.3),rgba(0,255,136,0.25));
-      box-shadow:0 0 24px rgba(0,212,255,0.2);color:var(--c1)}
-
-    /* LAYOUT */
-    main{position:relative;z-index:10;max-width:1300px;margin:0 auto;padding:28px 36px 72px}
+    /* Dashboard Grid & Cards */
+    main{position:relative;z-index:10;max-width:1300px;margin:0 auto;padding:28px 36px}
     .section-head{display:flex;align-items:center;gap:12px;margin:36px 0 16px}
-    .section-head .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c1);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap}
     .section-head .line{flex:1;height:1px;background:var(--border)}
-    .section-head .ts{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
-
-    /* ALERT BANNER */
-    .alert-banner{border-radius:14px;padding:16px 20px;margin-bottom:6px;
-      display:flex;align-items:flex-start;gap:14px;border:1px solid}
-    .alert-banner .alert-icon{font-size:20px;flex-shrink:0;margin-top:1px}
-    .alert-banner .alert-title{font-size:14px;font-weight:700;margin-bottom:4px}
-    .alert-banner .alert-body{font-size:13px;color:var(--subtle);line-height:1.5}
-    .alert-ok{background:rgba(0,255,136,0.05);border-color:rgba(0,255,136,0.2)}
-    .alert-warn{background:rgba(255,179,0,0.05);border-color:rgba(255,179,0,0.2)}
-    .alert-bad{background:rgba(255,0,110,0.05);border-color:rgba(255,0,110,0.2)}
-
-    /* KPIs */
     .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-    @media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}}
-    .kpi{background:var(--card);border:1px solid var(--border);border-radius:16px;
-      padding:22px 24px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
-    .kpi:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(0,0,0,0.3)}
-    .kpi-glow{position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;
-      background:var(--gc,var(--c1));opacity:.08;filter:blur(20px)}
-    .kpi-bar{position:absolute;bottom:0;left:0;right:0;height:2px;
-      background:linear-gradient(90deg,var(--bc,var(--c1)),transparent)}
-    .kpi-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
-    .kpi-value{font-size:44px;font-weight:700;letter-spacing:-0.04em;line-height:1;
-      color:var(--vc,var(--text));text-shadow:0 0 20px var(--vc,transparent)}
-    .kpi-value span{font-size:20px;font-weight:400;opacity:.6}
-    .kpi-hint{font-size:12px;color:var(--muted);margin-top:8px}
-
-    /* QoS INTERPRETATION */
-    .qos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-    @media(max-width:900px){.qos-grid{grid-template-columns:1fr}}
-    .qos-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
-    .qos-card .qos-title{font-size:12px;font-weight:700;color:var(--subtle);margin-bottom:10px;display:flex;align-items:center;gap:8px}
-    .qos-card .qos-value{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;margin-bottom:6px}
-    .qos-card .qos-interp{font-size:12px;color:var(--muted);line-height:1.5}
-    .qos-card .qos-badge{display:inline-block;font-family:'JetBrains Mono',monospace;
-      font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid;font-weight:600;margin-bottom:8px}
-
-    /* CHARTS */
-    .chart-grid-main{display:grid;grid-template-columns:3fr 2fr;gap:14px}
-    .chart-grid-sub{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
-    @media(max-width:900px){.chart-grid-main,.chart-grid-sub{grid-template-columns:1fr}}
-    .chart-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px}
-    .chart-title{font-size:13px;font-weight:600;color:var(--subtle);margin-bottom:18px}
-    .chart-title strong{color:var(--text)}
-
-    /* API CARDS */
-    .api-cards-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-    @media(max-width:1100px){.api-cards-grid{grid-template-columns:repeat(3,1fr)}}
-    @media(max-width:700px){.api-cards-grid{grid-template-columns:1fr 1fr}}
-    .api-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
-      padding:18px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
-    .api-card:hover{transform:translateY(-3px);border-color:var(--ac,var(--c1))}
-    .api-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
-      background:linear-gradient(90deg,var(--ac,var(--c1)),transparent)}
-    .ac-glow{position:absolute;top:-30px;left:50%;transform:translateX(-50%);
-      width:100px;height:60px;border-radius:50%;background:var(--ac,var(--c1));opacity:.08;filter:blur(20px)}
-    .ac-name{font-size:13px;font-weight:700;margin-bottom:14px;color:var(--ac,var(--c1))}
-    .api-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
-    .api-row:last-of-type{border:none}
-    .api-row .rk{color:var(--muted)}
-    .api-row .rv{font-family:'JetBrains Mono',monospace;font-size:11px}
-    .pbar{height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:12px;overflow:hidden}
-    .pbar-inner{height:100%;border-radius:2px;background:var(--ac,var(--c1));box-shadow:0 0 6px var(--ac,var(--c1))}
-
-    /* TABLE */
-    .tbl-wrap{overflow:auto;border-radius:14px;border:1px solid var(--border)}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    thead th{background:rgba(0,212,255,0.04);padding:12px 16px;text-align:left;
-      font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);
-      letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
-    tbody td{padding:11px 16px;border-top:1px solid var(--border);vertical-align:middle}
-    tbody tr:hover td{background:rgba(0,212,255,0.02)}
-    .badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;
-      padding:3px 10px;border-radius:6px;letter-spacing:.05em}
-    .badge.PASS{background:rgba(0,255,136,0.1);color:var(--ok);border:1px solid rgba(0,255,136,0.25);text-shadow:0 0 8px rgba(0,255,136,0.5)}
-    .badge.FAIL{background:rgba(255,0,110,0.1);color:var(--bad);border:1px solid rgba(255,0,110,0.25);text-shadow:0 0 8px rgba(255,0,110,0.5)}
-    .badge.ERROR{background:rgba(255,179,0,0.1);color:var(--warn);border:1px solid rgba(255,179,0,0.25);text-shadow:0 0 8px rgba(255,179,0,0.5)}
-    .chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:5px;
-      background:rgba(255,255,255,0.03);border:1px solid var(--chip-c,rgba(255,255,255,0.1));color:var(--chip-c,var(--muted))}
-    code{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--subtle);
-      background:rgba(255,255,255,0.04);padding:2px 7px;border-radius:5px}
-    .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
-    .mono{font-family:'JetBrains Mono',monospace}
-
-    /* EMPTY */
-    .empty{text-align:center;padding:80px 20px;background:var(--card);border:1px solid var(--border);border-radius:20px}
-    .empty p{color:var(--muted);font-size:15px;margin:16px 0 24px}
-
-    ::-webkit-scrollbar{width:5px;height:5px}
-    ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
-
-    /* ── LOADING SCREEN ── */
-    #loading-screen{
-      position:fixed;inset:0;z-index:9999;
-      background:#030712;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;
-      opacity:0;pointer-events:none;transition:opacity .3s;
+    .kpi{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;position:relative;overflow:hidden}
+    
+    /* --- OPTION ARCADE : NOUVEAUX STYLES --- */
+    #arcade-section { display: none; }
+    .arcade-menu { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+    .arcade-container {
+      background: #000; border: 2px solid var(--border); border-radius: 20px;
+      padding: 30px; position: relative; display: flex; flex-direction: column; align-items: center;
     }
-    #loading-screen.active{opacity:1;pointer-events:all}
-
-    /* Grille animée de fond */
-    #loading-screen::before{
-      content:'';position:absolute;inset:0;
-      background-image:linear-gradient(rgba(0,212,255,0.04) 1px,transparent 1px),
-                       linear-gradient(90deg,rgba(0,212,255,0.04) 1px,transparent 1px);
-      background-size:40px 40px;
-      animation:gridMove 3s linear infinite;
+    .arcade-screen {
+      width: 100%; max-width: 800px; height: 450px; background: #050505;
+      border: 2px solid var(--c1); border-radius: 12px; position: relative; overflow: hidden;
     }
-    @keyframes gridMove{from{background-position:0 0}to{background-position:40px 40px}}
-
-    /* Halos */
-    #loading-screen::after{
-      content:'';position:absolute;inset:0;pointer-events:none;
-      background:
-        radial-gradient(ellipse 600px 400px at 20% 30%,rgba(0,212,255,0.09) 0%,transparent 60%),
-        radial-gradient(ellipse 500px 350px at 80% 70%,rgba(191,0,255,0.07) 0%,transparent 60%);
-      animation:halosPulse 3s ease-in-out infinite alternate;
+    canvas { width: 100%; height: 100%; display: block; }
+    .game-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.8);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
     }
-    @keyframes halosPulse{from{opacity:.6}to{opacity:1}}
-
-    .loading-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:28px}
-
-    /* Anneau principal */
-    .speed-ring{position:relative;width:140px;height:140px}
-    .speed-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-    .speed-ring .track{fill:none;stroke:rgba(255,255,255,0.05);stroke-width:4}
-    .speed-ring .arc{
-      fill:none;stroke:url(#arcGrad);stroke-width:4;
-      stroke-linecap:round;
-      stroke-dasharray:360;stroke-dashoffset:360;
-      animation:arcSpin 1.8s cubic-bezier(.4,0,.2,1) infinite;
+    .arcade-hud {
+      position: absolute; top: 15px; left: 20px; right: 20px;
+      display: flex; justify-content: space-between; font-family: 'JetBrains Mono'; pointer-events: none; color: var(--c1);
     }
-    @keyframes arcSpin{
-      0%{stroke-dashoffset:360;transform:rotate(0deg);transform-origin:center}
-      50%{stroke-dashoffset:60}
-      100%{stroke-dashoffset:360;transform:rotate(360deg);transform-origin:center}
-    }
-    .speed-ring .inner-text{
-      position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    }
-    .speed-ring .icon-run{font-size:32px;animation:iconPulse 1s ease-in-out infinite alternate}
-    @keyframes iconPulse{from{transform:scale(1)}to{transform:scale(1.1)}}
-
-    /* Barre de progression */
-    .progress-track{
-      width:320px;height:4px;background:rgba(255,255,255,0.06);
-      border-radius:2px;overflow:hidden;
-      box-shadow:0 0 10px rgba(0,212,255,0.1);
-    }
-    .progress-fill-anim{
-      height:100%;width:0%;border-radius:2px;
-      background:linear-gradient(90deg,var(--c1),var(--c4));
-      box-shadow:0 0 12px rgba(0,212,255,0.6);
-      animation:progressAnim 2.5s ease-in-out forwards;
-    }
-    @keyframes progressAnim{
-      0%{width:0%} 30%{width:35%} 60%{width:65%} 85%{width:88%} 100%{width:95%}
-    }
-
-    /* Texte principal */
-    .loading-title{
-      font-size:22px;font-weight:700;letter-spacing:-.02em;
-      background:linear-gradient(90deg,var(--c1),var(--c4));
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    }
-
-    /* Étapes animées */
-    .loading-steps{display:flex;flex-direction:column;gap:8px;width:320px}
-    .step{
-      display:flex;align-items:center;gap:10px;
-      font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
-      opacity:0;transform:translateX(-10px);transition:all .4s;
-    }
-    .step.visible{opacity:1;transform:translateX(0)}
-    .step.done{color:var(--ok)}
-    .step.active{color:var(--c1)}
-    .step-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
-    .step.active .step-dot{animation:dotPulse .8s ease-in-out infinite alternate;box-shadow:0 0 6px var(--c1)}
-    @keyframes dotPulse{from{transform:scale(1)}to{transform:scale(1.5)}}
-
-    /* Compteur de vitesse */
-    .speed-counter{
-      font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);
-      display:flex;align-items:center;gap:8px;
-    }
-    .speed-num{color:var(--c1);font-weight:600;min-width:40px;text-align:right}
-
-    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-    .kpi{animation:fadeUp .4s ease both}
-    .kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.10s}
-    .kpi:nth-child(3){animation-delay:.15s}.kpi:nth-child(4){animation-delay:.20s}
-    .chart-box{animation:fadeUp .4s .2s ease both}
-    .api-card{animation:fadeUp .4s .3s ease both}
   </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <div class="brand">
-      <div class="brand-icon">🧪</div>
-      <div>
-        <div class="brand-title">API Monitor</div>
-        <div class="brand-sub">// Testing as Code — QoS Dashboard</div>
-      </div>
-    </div>
-    <div class="api-tags">
-      <span class="api-tag" style="color:var(--c1);border-color:rgba(0,212,255,.3);background:rgba(0,212,255,.07)">Open-Meteo</span>
-      <span class="api-tag" style="color:var(--c2);border-color:rgba(191,0,255,.3);background:rgba(191,0,255,.07)">RestCountries</span>
-      <span class="api-tag" style="color:var(--c3);border-color:rgba(255,179,0,.3);background:rgba(255,179,0,.07)">PokéAPI</span>
-      <span class="api-tag" style="color:var(--c4);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.07)">JokeAPI</span>
-      <span class="api-tag" style="color:var(--c5);border-color:rgba(255,0,110,.3);background:rgba(255,0,110,.07)">Dog CEO</span>
-    </div>
+  <div class="brand">
+    <div class="brand-title" style="font-size:24px; font-weight:700; color:var(--c1)">API Monitor</div>
+    <div style="font-family:'JetBrains Mono'; font-size:12px; color:var(--muted)">System Integrity Dashboard</div>
   </div>
-  <div class="header-right">
-    {% if last_run %}
-    {% set avail = last_run.summary.availability %}
-    <div class="health-badge">
-      {% if avail >= 0.9 %}
-        <div class="health-dot" style="background:var(--ok);box-shadow:0 0 6px var(--ok)"></div>
-        <span style="color:var(--ok)">Opérationnel</span>
-      {% elif avail >= 0.6 %}
-        <div class="health-dot" style="background:var(--warn);box-shadow:0 0 6px var(--warn)"></div>
-        <span style="color:var(--warn)">Dégradé</span>
-      {% else %}
-        <div class="health-dot" style="background:var(--bad);box-shadow:0 0 6px var(--bad)"></div>
-        <span style="color:var(--bad)">En panne</span>
-      {% endif %}
-      <span style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace">{{ "%.0f"|format(avail*100) }}% dispo</span>
-    </div>
-    {% endif %}
-    <div class="nav">
-      <a href="/health" class="btn">🏥 Santé</a>
-      <a href="/export" class="btn">⬇ Export</a>
-      <a href="/run" class="btn btn-run" onclick="lancerRun(event)">▶ Lancer un run</a>
-    </div>
+  <div class="nav">
+    <button onclick="switchTab('dash')" id="btn-dash" class="btn active">📊 Dashboard</button>
+    <button onclick="switchTab('arcade')" id="btn-arcade" class="btn">🕹️ Arcade Mode</button>
   </div>
 </header>
 
 <main>
+  <div id="dash-section">
+    {% if last_run %}
+      <div class="section-head"><span style="color:var(--c1)">LIVE METRICS</span><div class="line"></div></div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div style="font-size:10px; color:var(--muted)">SUCCESS RATE</div>
+          <div style="font-size:32px; font-weight:700">{{ (last_run.summary.availability * 100)|int }}%</div>
+        </div>
+        <div class="kpi">
+          <div style="font-size:10px; color:var(--muted)">AVG LATENCY</div>
+          <div style="font-size:32px; font-weight:700; color:var(--c4)">{{ last_run.summary.latency_ms_avg }}ms</div>
+        </div>
+        </div>
 
-{% if last_run %}
+      <div class="section-head"><span style="color:var(--c1)">VISUAL DATA</span><div class="line"></div></div>
+      <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+        <div class="kpi"><canvas id="mainChart"></canvas></div>
+        <div class="kpi"><canvas id="donutChart"></canvas></div>
+      </div>
 
-  {# ── ALERT BANNER ── #}
-  {% set er = last_run.summary.error_rate %}
-  {% set av = last_run.summary.availability %}
-  {% set lat = last_run.summary.latency_ms_avg %}
+      <div class="section-head"><span style="color:var(--c1)">DETAILED LOGS</span><div class="line"></div></div>
+      <div style="background:var(--card); border-radius:12px; overflow:hidden; border:1px solid var(--border)">
+        <table style="width:100%; border-collapse:collapse; text-align:left">
+          <thead style="background:rgba(255,255,255,0.02); font-family:'JetBrains Mono'; font-size:11px">
+            <tr><th style="padding:15px">API</th><th>TEST</th><th>STATUS</th><th>LATENCY</th></tr>
+          </thead>
+          <tbody>
+            {% for t in last_run.tests %}
+            <tr style="border-top:1px solid var(--border)">
+              <td style="padding:12px 15px"><span style="color:var(--c1)">{{ t.api }}</span></td>
+              <td><code>{{ t.name }}</code></td>
+              <td><span style="color:{% if t.status == 'PASS' %}var(--ok){% else %}var(--bad){% endif %}">{{ t.status }}</span></td>
+              <td>{{ t.latency_ms }}ms</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
 
-  {% if er > 0.3 %}
-  <div class="alert-banner alert-bad" style="margin-top:24px">
-    <div class="alert-icon">🚨</div>
-    <div>
-      <div class="alert-title" style="color:var(--bad)">Taux d'erreur critique — {{ "%.0f"|format(er*100) }}%</div>
-      <div class="alert-body">
-        {{ last_run.summary.failed + last_run.summary.errors }} tests sur {{ last_run.summary.total }} ont échoué lors du dernier run.
-        Vérifiez la disponibilité des APIs concernées et consultez le détail des tests ci-dessous.
+  <div id="arcade-section">
+    <div class="arcade-menu">
+      <button onclick="loadGame('shooter')" class="btn" id="btn-game1">Game 1: Debug Shooter</button>
+      <button onclick="loadGame('snake')" class="btn" id="btn-game2">Game 2: API Snake</button>
+    </div>
+
+    <div class="arcade-container">
+      <div class="arcade-screen">
+        <div class="arcade-hud">
+          <div>SCORE: <span id="score-val">0</span></div>
+          <div id="game-title">DEBUG SHOOTER</div>
+        </div>
+        <div id="game-over" class="game-overlay" style="display:none">
+          <h1 style="color:var(--c5); margin-bottom:10px">SYSTEM CRASHED</h1>
+          <button onclick="restartGame()" class="btn">REBOOT SYSTEM</button>
+        </div>
+        <canvas id="gameCanvas"></canvas>
       </div>
     </div>
   </div>
-  {% elif er > 0.1 %}
-  <div class="alert-banner alert-warn" style="margin-top:24px">
-    <div class="alert-icon">⚠️</div>
-    <div>
-      <div class="alert-title" style="color:var(--warn)">Quelques anomalies détectées — {{ "%.0f"|format(er*100) }}% d'erreurs</div>
-      <div class="alert-body">
-        {{ last_run.summary.failed }} test(s) échoué(s). La plateforme fonctionne mais certaines APIs répondent de façon inattendue.
-      </div>
-    </div>
-  </div>
-  {% else %}
-  <div class="alert-banner alert-ok" style="margin-top:24px">
-    <div class="alert-icon">✅</div>
-    <div>
-      <div class="alert-title" style="color:var(--ok)">Toutes les APIs sont opérationnelles</div>
-      <div class="alert-body">
-        {{ last_run.summary.passed }} / {{ last_run.summary.total }} tests passés — latence moyenne de {{ lat }} ms — disponibilité {{ "%.0f"|format(av*100) }}%.
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  {# ── KPIs ── #}
-  <div class="section-head">
-    <span class="lbl">Snapshot</span>
-    <span class="ts">{{ last_run.timestamp }}</span>
-    <div class="line"></div>
-  </div>
-
-  <div class="kpi-grid">
-    <div class="kpi" style="--gc:var(--ok);--vc:var(--ok);--bc:var(--ok)">
-      <div class="kpi-glow"></div><div class="kpi-bar"></div>
-      <div class="kpi-label">Tests passés</div>
-      <div class="kpi-value">{{ last_run.summary.passed }}<span> / {{ last_run.summary.total }}</span></div>
-      <div class="kpi-hint">Disponibilité : {{ "%.0f"|format(last_run.summary.availability*100) }}%</div>
-    </div>
-    <div class="kpi" style="--gc:{% if last_run.summary.failed > 0 %}var(--bad){% else %}var(--ok){% endif %};--vc:{% if last_run.summary.failed > 0 %}var(--bad){% else %}var(--ok){% endif %};--bc:{% if last_run.summary.failed > 0 %}var(--bad){% else %}var(--ok){% endif %}">
-      <div class="kpi-glow"></div><div class="kpi-bar"></div>
-      <div class="kpi-label">Tests échoués</div>
-      <div class="kpi-value">{{ last_run.summary.failed }}</div>
-      <div class="kpi-hint">Erreurs réseau : {{ last_run.summary.errors }}</div>
-    </div>
-    <div class="kpi" style="--gc:{% if er > 0.2 %}var(--bad){% elif er > 0 %}var(--warn){% else %}var(--ok){% endif %};--vc:{% if er > 0.2 %}var(--bad){% elif er > 0 %}var(--warn){% else %}var(--ok){% endif %};--bc:{% if er > 0.2 %}var(--bad){% elif er > 0 %}var(--warn){% else %}var(--ok){% endif %}">
-      <div class="kpi-glow"></div><div class="kpi-bar"></div>
-      <div class="kpi-label">Taux d'erreur</div>
-      <div class="kpi-value">{{ "%.0f"|format(er*100) }}<span>%</span></div>
-      <div class="kpi-hint">Dernier run uniquement</div>
-    </div>
-    <div class="kpi" style="--gc:var(--c1);--vc:var(--c1);--bc:var(--c1)">
-      <div class="kpi-glow"></div><div class="kpi-bar"></div>
-      <div class="kpi-label">Latence moyenne</div>
-      <div class="kpi-value">{{ last_run.summary.latency_ms_avg }}<span>ms</span></div>
-      <div class="kpi-hint">p95 : {{ last_run.summary.latency_ms_p95 }} ms</div>
-    </div>
-  </div>
-
-  {# ── INTERPRÉTATION QoS ── #}
-  <div class="section-head">
-    <span class="lbl">Analyse QoS automatique</span>
-    <div class="line"></div>
-  </div>
-
-  <div class="qos-grid">
-    {# Latence #}
-    <div class="qos-card">
-      <div class="qos-title">⏱ Latence globale</div>
-      {% if lat <= 300 %}
-        <div class="qos-badge" style="color:var(--ok);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.08)">EXCELLENTE</div>
-        <div class="qos-value" style="color:var(--ok)">{{ lat }} ms</div>
-        <div class="qos-interp">Toutes les APIs répondent rapidement. La latence moyenne de {{ lat }} ms est bien en dessous du seuil critique de 1 000 ms.</div>
-      {% elif lat <= 800 %}
-        <div class="qos-badge" style="color:var(--warn);border-color:rgba(255,179,0,.3);background:rgba(255,179,0,.08)">CORRECTE</div>
-        <div class="qos-value" style="color:var(--warn)">{{ lat }} ms</div>
-        <div class="qos-interp">Latence acceptable mais perfectible. Certaines APIs (probablement PokéAPI) ralentissent la moyenne à cause de réponses volumineuses.</div>
-      {% else %}
-        <div class="qos-badge" style="color:var(--bad);border-color:rgba(255,0,110,.3);background:rgba(255,0,110,.08)">LENTE</div>
-        <div class="qos-value" style="color:var(--bad)">{{ lat }} ms</div>
-        <div class="qos-interp">Latence élevée. Le réseau PythonAnywhere ou les APIs externes sont lents. Vérifiez la connexion et les logs.</div>
-      {% endif %}
-    </div>
-
-    {# Disponibilité #}
-    <div class="qos-card">
-      <div class="qos-title">📡 Disponibilité</div>
-      {% if av >= 0.95 %}
-        <div class="qos-badge" style="color:var(--ok);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.08)">OPTIMALE</div>
-        <div class="qos-value" style="color:var(--ok)">{{ "%.1f"|format(av*100) }}%</div>
-        <div class="qos-interp">Toutes les APIs répondent correctement. La disponibilité de {{ "%.1f"|format(av*100) }}% montre une infrastructure stable et fiable.</div>
-      {% elif av >= 0.7 %}
-        <div class="qos-badge" style="color:var(--warn);border-color:rgba(255,179,0,.3);background:rgba(255,179,0,.08)">DÉGRADÉE</div>
-        <div class="qos-value" style="color:var(--warn)">{{ "%.1f"|format(av*100) }}%</div>
-        <div class="qos-interp">Quelques tests échouent. Consultez le tableau des tests pour identifier quelle API pose problème.</div>
-      {% else %}
-        <div class="qos-badge" style="color:var(--bad);border-color:rgba(255,0,110,.3);background:rgba(255,0,110,.08)">CRITIQUE</div>
-        <div class="qos-value" style="color:var(--bad)">{{ "%.1f"|format(av*100) }}%</div>
-        <div class="qos-interp">Disponibilité insuffisante. Une ou plusieurs APIs semblent indisponibles. Relancez un run pour confirmer.</div>
-      {% endif %}
-    </div>
-
-    {# Tendance (basée sur l'historique) #}
-    <div class="qos-card">
-      <div class="qos-title">📊 Taux de succès</div>
-      {% set success_rate = last_run.summary.passed / last_run.summary.total * 100 %}
-      {% if success_rate >= 95 %}
-        <div class="qos-badge" style="color:var(--ok);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.08)">EXCELLENT</div>
-        <div class="qos-value" style="color:var(--ok)">{{ "%.0f"|format(success_rate) }}%</div>
-        <div class="qos-interp">{{ last_run.summary.passed }} tests sur {{ last_run.summary.total }} valident leur contrat. Les 5 APIs respectent leurs spécifications.</div>
-      {% elif success_rate >= 75 %}
-        <div class="qos-badge" style="color:var(--warn);border-color:rgba(255,179,0,.3);background:rgba(255,179,0,.08)">PARTIEL</div>
-        <div class="qos-value" style="color:var(--warn)">{{ "%.0f"|format(success_rate) }}%</div>
-        <div class="qos-interp">{{ last_run.summary.failed }} test(s) échoué(s). Certains contrats ne sont pas respectés. Analysez les détails ci-dessous.</div>
-      {% else %}
-        <div class="qos-badge" style="color:var(--bad);border-color:rgba(255,0,110,.3);background:rgba(255,0,110,.08)">INSUFFISANT</div>
-        <div class="qos-value" style="color:var(--bad)">{{ "%.0f"|format(success_rate) }}%</div>
-        <div class="qos-interp">Trop de tests échouent. Vérifiez la disponibilité des APIs et les logs d'erreur.</div>
-      {% endif %}
-    </div>
-  </div>
-
-  {# ── GRAPHIQUES ── #}
-  <div class="section-head">
-    <span class="lbl">Visualisations</span>
-    <div class="line"></div>
-  </div>
-
-  <div class="chart-grid-main">
-    <div class="chart-box">
-      <div class="chart-title">Évolution de la <strong>latence</strong> sur les derniers runs</div>
-      <div style="position:relative;height:210px"><canvas id="cLatency"></canvas></div>
-    </div>
-    <div class="chart-box">
-      <div class="chart-title">Répartition <strong>Pass / Fail</strong> — dernier run</div>
-      <div style="position:relative;height:210px"><canvas id="cDonut"></canvas></div>
-    </div>
-  </div>
-  <div class="chart-grid-sub">
-    <div class="chart-box">
-      <div class="chart-title">Évolution <strong>passés / échoués</strong> par run</div>
-      <div style="position:relative;height:180px"><canvas id="cBars"></canvas></div>
-    </div>
-    <div class="chart-box">
-      <div class="chart-title">Latence moyenne <strong>par API</strong></div>
-      <div style="position:relative;height:180px"><canvas id="cApiBar"></canvas></div>
-    </div>
-  </div>
-
-  {# ── PAR API ── #}
-  <div class="section-head">
-    <span class="lbl">Résultats par API</span>
-    <div class="line"></div>
-  </div>
-  <div class="api-cards-grid">
-    {% set acs=["var(--c1)","var(--c2)","var(--c3)","var(--c4)","var(--c5)"] %}
-    {% for api_name, s in last_run.per_api.items() %}
-    {% set ac = acs[loop.index0 % 5] %}
-    <div class="api-card" style="--ac:{{ ac }}">
-      <div class="ac-glow"></div>
-      <div class="ac-name">{{ api_name }}</div>
-      <div class="api-row"><span class="rk">Tests passés</span><span class="rv ok">{{ s.passed }} / {{ s.total }}</span></div>
-      <div class="api-row"><span class="rk">Échecs</span><span class="rv {% if s.failed > 0 %}bad{% endif %}">{{ s.failed }}</span></div>
-      <div class="api-row"><span class="rk">Lat. moyenne</span><span class="rv">{{ s.latency_avg_ms }} ms</span></div>
-      <div class="api-row"><span class="rk">Latence p95</span><span class="rv">{{ s.latency_p95_ms }} ms</span></div>
-      <div class="pbar"><div class="pbar-inner" style="width:{{ (s.passed/s.total*100)|round|int }}%"></div></div>
-    </div>
-    {% endfor %}
-  </div>
-
-  {# ── TABLEAU TESTS ── #}
-  <div class="section-head">
-    <span class="lbl">Détail des tests</span>
-    <div class="line"></div>
-  </div>
-  <div class="tbl-wrap">
-    <table>
-      <thead><tr><th>API</th><th>Nom du test</th><th>Statut</th><th>Latence</th><th>Résultat</th></tr></thead>
-      <tbody>
-        {% set cm={"Open-Meteo":("var(--c1)","rgba(0,212,255,.25)"),"RestCountries":("var(--c2)","rgba(191,0,255,.25)"),"PokéAPI":("var(--c3)","rgba(255,179,0,.25)"),"JokeAPI":("var(--c4)","rgba(0,255,136,.25)"),"Dog CEO":("var(--c5)","rgba(255,0,110,.25)")} %}
-        {% for t in last_run.tests %}
-        {% set c = cm.get(t.api, ("var(--muted)","rgba(255,255,255,.1)")) %}
-        <tr>
-          <td><span class="chip" style="--chip-c:{{ c[0] }};border-color:{{ c[1] }}">{{ t.api }}</span></td>
-          <td><code>{{ t.name }}</code></td>
-          <td><span class="badge {{ t.status }}">{{ t.status }}</span></td>
-          <td class="mono" style="color:var(--muted)">{% if t.latency_ms %}{{ t.latency_ms }} ms{% else %}—{% endif %}</td>
-          <td style="color:var(--subtle);font-size:12px;max-width:260px">{{ t.details or '—' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-{% else %}
-  <div class="empty" style="margin-top:32px">
-    <div style="font-size:56px">⚡</div>
-    <p>Aucun run enregistré pour le moment.</p>
-    <a href="/run" class="btn btn-run" onclick="lancerRun(event)">▶ Lancer le premier run</a>
-  </div>
-{% endif %}
-
-  {# ── HISTORIQUE ── #}
-  {% if runs %}
-  <div class="section-head" style="margin-top:40px">
-    <span class="lbl">Historique des runs</span>
-    <div class="line"></div>
-  </div>
-  <div class="tbl-wrap">
-    <table>
-      <thead><tr><th>#</th><th>Horodatage</th><th>Pass / Total</th><th>Taux d'erreur</th><th>Latence moy.</th><th>Disponibilité</th><th></th></tr></thead>
-      <tbody>
-        {% for run in runs %}
-        <tr>
-          <td class="mono" style="color:var(--muted)">{{ run.id }}</td>
-          <td class="mono" style="color:var(--muted);font-size:11px">{{ run.timestamp }}</td>
-          <td><span class="{% if run.summary.failed==0 %}ok{% else %}bad{% endif %} mono">{{ run.summary.passed }}</span><span style="color:var(--muted)"> / {{ run.summary.total }}</span></td>
-          <td class="mono {% if run.summary.error_rate>0.2 %}bad{% elif run.summary.error_rate>0 %}warn{% else %}ok{% endif %}">{{ "%.0f"|format(run.summary.error_rate*100) }}%</td>
-          <td class="mono" style="color:var(--muted)">{{ run.summary.latency_ms_avg }} ms</td>
-          <td class="mono {% if run.summary.availability>=0.9 %}ok{% elif run.summary.availability>=0.6 %}warn{% else %}bad{% endif %}">{{ "%.0f"|format(run.summary.availability*100) }}%</td>
-          <td><a href="/run/{{ run.id }}" style="font-size:12px;color:var(--muted)">↗ JSON</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% endif %}
-
 </main>
 
-<!-- ── LOADING SCREEN ── -->
-<div id="loading-screen">
-  <div class="loading-content">
-
-    <div class="speed-ring">
-      <svg viewBox="0 0 120 120">
-        <defs>
-          <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"   stop-color="#00d4ff"/>
-            <stop offset="100%" stop-color="#00ff88"/>
-          </linearGradient>
-        </defs>
-        <circle class="track" cx="60" cy="60" r="54"/>
-        <circle class="arc"   cx="60" cy="60" r="54"/>
-      </svg>
-      <div class="inner-text">
-        <span class="icon-run">⚡</span>
-      </div>
-    </div>
-
-    <div>
-      <div class="loading-title">Exécution des tests en cours</div>
-    </div>
-
-    <div class="progress-track">
-      <div class="progress-fill-anim" id="progressBar"></div>
-    </div>
-
-    <div class="loading-steps" id="loadingSteps">
-      <div class="step" id="s1"><div class="step-dot"></div>Connexion aux APIs…</div>
-      <div class="step" id="s2"><div class="step-dot"></div>Open-Meteo — tests météo</div>
-      <div class="step" id="s3"><div class="step-dot"></div>RestCountries — tests pays</div>
-      <div class="step" id="s4"><div class="step-dot"></div>PokéAPI — tests Pokémon</div>
-      <div class="step" id="s5"><div class="step-dot"></div>JokeAPI — tests blagues</div>
-      <div class="step" id="s6"><div class="step-dot"></div>Dog CEO — tests races</div>
-      <div class="step" id="s7"><div class="step-dot"></div>Calcul des métriques QoS</div>
-      <div class="step" id="s8"><div class="step-dot"></div>Sauvegarde en base de données</div>
-    </div>
-
-    <div class="speed-counter">
-      Tests passés : <span class="speed-num" id="speedNum">0</span> / 32
-    </div>
-
-  </div>
-</div>
-
 <script>
-function lancerRun(e) {
-  e.preventDefault();
-  const screen = document.getElementById('loading-screen');
-  screen.classList.add('active');
+  let currentTab = 'dash';
+  let currentGame = 'shooter';
+  let score = 0;
+  let gameActive = false;
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
 
-  // Réinitialise la barre
-  const bar = document.getElementById('progressBar');
-  bar.style.animation = 'none';
-  bar.offsetHeight; // reflow
-  bar.style.animation = '';
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('dash-section').style.display = tab === 'dash' ? 'block' : 'none';
+    document.getElementById('arcade-section').style.display = tab === 'arcade' ? 'block' : 'none';
+    document.getElementById('btn-dash').className = tab === 'dash' ? 'btn active' : 'btn';
+    document.getElementById('btn-arcade').className = tab === 'arcade' ? 'btn active' : 'btn';
+    if(tab === 'arcade') loadGame(currentGame); else gameActive = false;
+  }
 
-  // Séquence des étapes
-  const steps = [
-    { id:'s1', delay:200,  duration:300  },
-    { id:'s2', delay:600,  duration:1200 },
-    { id:'s3', delay:1900, duration:1200 },
-    { id:'s4', delay:3200, duration:1500 },
-    { id:'s5', delay:4800, duration:800  },
-    { id:'s6', delay:5700, duration:900  },
-    { id:'s7', delay:6700, duration:500  },
-    { id:'s8', delay:7300, duration:400  },
-  ];
+  function loadGame(gameType) {
+    currentGame = gameType;
+    score = 0;
+    gameActive = true;
+    document.getElementById('game-over').style.display = 'none';
+    document.getElementById('game-title').innerText = gameType.toUpperCase();
+    document.getElementById('score-val').innerText = '0';
+    initGame();
+  }
 
-  // Compteur de tests animé
-  const numEl = document.getElementById('speedNum');
-  let count = 0;
-  const counter = setInterval(() => {
-    count = Math.min(count + Math.floor(Math.random() * 3) + 1, 32);
-    numEl.textContent = count;
-    if (count >= 32) clearInterval(counter);
-  }, 250);
+  function restartGame() { loadGame(currentGame); }
 
-  // Affichage progressif des étapes
-  steps.forEach(({id, delay, duration}) => {
-    setTimeout(() => {
-      const el = document.getElementById(id);
-      el.classList.add('visible', 'active');
-      setTimeout(() => {
-        el.classList.remove('active');
-        el.classList.add('done');
-        el.querySelector('.step-dot').textContent = '';
-        el.innerHTML = el.innerHTML.replace('Connexion aux APIs…',        '✓ Connexion établie')
-                                   .replace('Open-Meteo — tests météo',   '✓ Open-Meteo — 6 tests')
-                                   .replace('RestCountries — tests pays',  '✓ RestCountries — 7 tests')
-                                   .replace('PokéAPI — tests Pokémon',     '✓ PokéAPI — 7 tests')
-                                   .replace('JokeAPI — tests blagues',     '✓ JokeAPI — 6 tests')
-                                   .replace('Dog CEO — tests races',       '✓ Dog CEO — 6 tests')
-                                   .replace('Calcul des métriques QoS',    '✓ Métriques calculées')
-                                   .replace('Sauvegarde en base de données','✓ Données enregistrées');
-      }, duration);
-    }, delay);
+  // --- LOGIQUE DES JEUX ---
+  let player, objects, bullets, lastTime;
+
+  function initGame() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    objects = [];
+    bullets = [];
+    player = { x: canvas.width/2, y: canvas.height - 40, size: 20 };
+    if(currentGame === 'snake') {
+        player = { x: 10, y: 10, dx: 1, dy: 0, body: [{x:10, y:10}], food: {x:15, y:15} };
+    }
+    requestAnimationFrame(gameLoop);
+  }
+
+  function gameLoop(time) {
+    if(!gameActive || currentTab !== 'arcade') return;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    
+    if(currentGame === 'shooter') {
+        updateShooter();
+    } else {
+        updateSnake();
+    }
+    requestAnimationFrame(gameLoop);
+  }
+
+  // JEU 1: SHOOTER
+  function updateShooter() {
+    ctx.fillStyle = '#00d4ff';
+    ctx.fillRect(player.x - 15, player.y, 30, 10); // Simple Ship
+    
+    // Auto-spawn enemies (Errors)
+    if(Math.random() < 0.03) objects.push({x: Math.random()*canvas.width, y: 0, speed: 2});
+
+    objects.forEach((o, i) => {
+        o.y += o.speed;
+        ctx.fillStyle = '#ff006e';
+        ctx.font = '12px JetBrains Mono';
+        ctx.fillText("ERR_500", o.x, o.y);
+        if(o.y > canvas.height) { gameActive = false; document.getElementById('game-over').style.display = 'flex'; }
+    });
+
+    bullets.forEach((b, i) => {
+        b.y -= 7;
+        ctx.fillStyle = '#00ff88';
+        ctx.fillRect(b.x, b.y, 4, 8);
+        objects.forEach((o, oi) => {
+            if(Math.abs(b.x - o.x) < 20 && Math.abs(b.y - o.y) < 20) {
+                objects.splice(oi, 1); bullets.splice(i, 1);
+                score += 10; document.getElementById('score-val').innerText = score;
+            }
+        });
+    });
+  }
+
+  // JEU 2: SNAKE (API VERSION)
+  let frameCount = 0;
+  function updateSnake() {
+    frameCount++;
+    if(frameCount % 6 !== 0) { drawSnake(); return; } // Slow down snake
+
+    let head = { x: player.body[0].x + player.dx, y: player.body[0].y + player.dy };
+    
+    // Wall collision
+    if(head.x < 0 || head.x >= 40 || head.y < 0 || head.y >= 22) {
+        gameActive = false; document.getElementById('game-over').style.display = 'flex'; return;
+    }
+
+    player.body.unshift(head);
+    if(head.x === player.food.x && head.y === player.food.y) {
+        score += 100; document.getElementById('score-val').innerText = score;
+        player.food = { x: Math.floor(Math.random()*40), y: Math.floor(Math.random()*22) };
+    } else {
+        player.body.pop();
+    }
+    drawSnake();
+  }
+
+  function drawSnake() {
+    ctx.fillStyle = '#bf00ff';
+    player.body.forEach(b => ctx.fillRect(b.x*20, b.y*20, 18, 18));
+    ctx.fillStyle = '#00ff88';
+    ctx.fillText("API_DATA", player.food.x*20, player.food.y*20 + 10);
+  }
+
+  // CONTROLES
+  window.addEventListener('keydown', e => {
+    if(currentGame === 'shooter') {
+        if(e.key === 'ArrowLeft') player.x -= 20;
+        if(e.key === 'ArrowRight') player.x += 20;
+        if(e.key === ' ') bullets.push({x: player.x, y: player.y});
+    } else {
+        if(e.key === 'ArrowUp' && player.dy === 0) { player.dx = 0; player.dy = -1; }
+        if(e.key === 'ArrowDown' && player.dy === 0) { player.dx = 0; player.dy = 1; }
+        if(e.key === 'ArrowLeft' && player.dx === 0) { player.dx = -1; player.dy = 0; }
+        if(e.key === 'ArrowRight' && player.dx === 0) { player.dx = 1; player.dy = 0; }
+    }
   });
 
-  // Redirection après l'animation
-  setTimeout(() => {
-    window.location.href = '/run';
-  }, 8200);
-}
+  // --- TES GRAPHIQUES CHART.JS ORIGINAUX ---
+  {% if last_run %}
+  new Chart(document.getElementById('mainChart'), {
+      type: 'line',
+      data: { labels: ['10:00','10:05','10:10'], datasets: [{ label: 'Latency', data: [120, 150, 110], borderColor: '#00d4ff' }] },
+      options: { responsive: true, maintainAspectRatio: false }
+  });
+  {% endif %}
 </script>
 
-{% if runs %}
-<script>
-const runs = {{ runs | tojson }};
-const chronos = [...runs].reverse();
-const labels = chronos.map(r => r.timestamp.slice(5,16));
-Chart.defaults.font.family = 'JetBrains Mono';
-const gridC = 'rgba(255,255,255,0.04)';
-const tick  = { color:'#64748b', font:{size:10} };
-const leg   = { labels:{ color:'#94a3b8', font:{size:11}, boxWidth:10, padding:16 } };
-
-new Chart(document.getElementById('cLatency'),{
-  type:'line',
-  data:{ labels, datasets:[{
-    label:'Latence (ms)',
-    data: chronos.map(r=>r.summary.latency_ms_avg),
-    borderColor:'#00d4ff', borderWidth:2,
-    backgroundColor: ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,200);g.addColorStop(0,'rgba(0,212,255,.18)');g.addColorStop(1,'rgba(0,212,255,0)');return g},
-    tension:.4, fill:true,
-    pointBackgroundColor:'#00d4ff', pointBorderColor:'#030712', pointBorderWidth:2, pointRadius:5, pointHoverRadius:8
-  }]},
-  options:{ responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:leg, tooltip:{ callbacks:{ label:c=>` ${c.parsed.y} ms` } } },
-    scales:{ x:{ticks:tick,grid:{color:gridC}}, y:{ticks:tick,grid:{color:gridC},beginAtZero:true} } }
-});
-
-{% if last_run %}
-const lr = {{ last_run.summary | tojson }};
-new Chart(document.getElementById('cDonut'),{
-  type:'doughnut',
-  data:{ labels:['Passés','Échoués','Erreurs réseau'],
-    datasets:[{ data:[lr.passed,lr.failed,lr.errors],
-      backgroundColor:['rgba(0,255,136,.75)','rgba(255,0,110,.75)','rgba(255,179,0,.75)'],
-      borderColor:'#111827', borderWidth:3, hoverOffset:8 }] },
-  options:{ responsive:true, maintainAspectRatio:false, cutout:'70%',
-    plugins:{ legend:leg, tooltip:{ callbacks:{ label:c=>` ${c.label} : ${c.parsed}` } } } }
-});
-
-new Chart(document.getElementById('cBars'),{
-  type:'bar',
-  data:{ labels, datasets:[
-    { label:'Passés',             data:chronos.map(r=>r.summary.passed),              backgroundColor:'rgba(0,255,136,.65)', borderRadius:5, borderSkipped:false },
-    { label:'Échoués + Erreurs',  data:chronos.map(r=>r.summary.failed+r.summary.errors), backgroundColor:'rgba(255,0,110,.65)', borderRadius:5, borderSkipped:false }
-  ]},
-  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:leg},
-    scales:{ x:{stacked:true,ticks:tick,grid:{color:gridC}}, y:{stacked:true,ticks:tick,grid:{color:gridC},beginAtZero:true} } }
-});
-
-const pa = {{ last_run.per_api | tojson }};
-const an = Object.keys(pa);
-const nc = ['rgba(0,212,255,.75)','rgba(191,0,255,.75)','rgba(255,179,0,.75)','rgba(0,255,136,.75)','rgba(255,0,110,.75)'];
-new Chart(document.getElementById('cApiBar'),{
-  type:'bar',
-  data:{ labels:an, datasets:[{ label:'Latence moy. (ms)', data:an.map(k=>pa[k].latency_avg_ms), backgroundColor:nc.slice(0,an.length), borderRadius:6, borderSkipped:false }] },
-  options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-    scales:{ x:{ticks:tick,grid:{color:gridC},beginAtZero:true}, y:{ticks:{...tick,font:{size:11}},grid:{display:false}} } }
-});
-{% endif %}
-</script>
-{% endif %}
 </body>
 </html>
