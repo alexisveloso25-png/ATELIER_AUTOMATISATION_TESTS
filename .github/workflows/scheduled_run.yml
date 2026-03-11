@@ -1,0 +1,62 @@
+name: API Monitor — Run automatique
+
+on:
+  schedule:
+    # Toutes les 5 minutes
+    - cron: '*/5 * * * *'
+
+  # Permet aussi de déclencher manuellement depuis l'onglet Actions
+  workflow_dispatch:
+
+jobs:
+  run-tests:
+    name: Déclencher un run de tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Appeler /run/json sur PythonAnywhere
+        run: |
+          echo "⏱ Déclenchement du run à $(date)"
+          
+          RESPONSE=$(curl -s -o /tmp/result.json -w "%{http_code}" \
+            --max-time 120 \
+            "https://aveloso.pythonanywhere.com/run/json")
+          
+          echo "HTTP Status : $RESPONSE"
+          
+          if [ "$RESPONSE" != "200" ]; then
+            echo "❌ Erreur : le serveur a répondu $RESPONSE"
+            cat /tmp/result.json
+            exit 1
+          fi
+          
+          echo "✅ Run terminé avec succès"
+
+      - name: Afficher le résumé du run
+        run: |
+          echo "📊 Résumé du run :"
+          cat /tmp/result.json | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          s = data.get('summary', {})
+          print(f\"  Timestamp   : {data.get('timestamp', '?')}\")
+          print(f\"  Passés      : {s.get('passed', '?')} / {s.get('total', '?')}\")
+          print(f\"  Échoués     : {s.get('failed', '?')}\")
+          print(f\"  Taux erreur : {round(s.get('error_rate', 0)*100, 1)}%\")
+          print(f\"  Latence moy.: {s.get('latency_ms_avg', '?')} ms\")
+          print(f\"  p95         : {s.get('latency_ms_p95', '?')} ms\")
+          print(f\"  Disponibil. : {round(s.get('availability', 0)*100, 1)}%\")
+          "
+
+      - name: Alerter si taux d'erreur > 20%
+        run: |
+          python3 -c "
+          import json, sys
+          data = json.load(open('/tmp/result.json'))
+          rate = data.get('summary', {}).get('error_rate', 0)
+          if rate > 0.2:
+              print(f'⚠️  ALERTE : taux d erreur élevé = {round(rate*100,1)}%')
+              sys.exit(1)
+          else:
+              print(f'✅ Taux d erreur OK = {round(rate*100,1)}%')
+          "
