@@ -1,1 +1,235 @@
 
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Monitor — Dashboard</title>
+  <style>
+    :root {
+      --bg: #0b1020; --card: #121a33; --muted: #aab4d4; --text: #e9edff;
+      --accent: #77baff; --ok: #62d6a0; --warn: #ffcc66; --bad: #ff6b7a;
+      --line: rgba(255,255,255,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 10% 0%, #172257 0%, var(--bg) 60%);
+      color: var(--text); line-height: 1.5;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header {
+      max-width: 1100px; margin: 0 auto; padding: 28px 20px 10px;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+    }
+    h1 { margin: 0; font-size: 22px; }
+    .btn {
+      display: inline-block; padding: 8px 16px; border-radius: 10px;
+      background: rgba(119,186,255,0.18); border: 1px solid rgba(119,186,255,0.34);
+      color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn:hover { filter: brightness(1.1); text-decoration: none; }
+    .btn.green { background: rgba(98,214,160,0.15); border-color: rgba(98,214,160,0.30); }
+    .container { max-width: 1100px; margin: 0 auto; padding: 12px 20px 40px; }
+
+    /* KPI CARDS */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .kpi-box {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .kpi-box .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .kpi-box .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+    .kpi-box .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .neutral { color: var(--accent); }
+
+    /* SECTION TITLE */
+    .section-title { font-size: 15px; font-weight: 600; margin: 24px 0 10px; color: #d6dcff; }
+
+    /* PER-API GRID */
+    .api-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .api-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+    }
+    .api-card h3 { margin: 0 0 10px; font-size: 15px; }
+    .api-stat { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+    .api-stat span:last-child { color: var(--muted); }
+
+    /* TESTS TABLE */
+    .table-wrap { overflow: auto; border-radius: 14px; border: 1px solid var(--line); margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: rgba(119,186,255,0.10); padding: 10px 12px; text-align: left; font-weight: 600; }
+    td { padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    }
+    .badge.PASS { background: rgba(98,214,160,0.15); color: var(--ok); border: 1px solid rgba(98,214,160,0.3); }
+    .badge.FAIL { background: rgba(255,107,122,0.15); color: var(--bad); border: 1px solid rgba(255,107,122,0.3); }
+    .badge.ERROR { background: rgba(255,204,102,0.15); color: var(--warn); border: 1px solid rgba(255,204,102,0.3); }
+    .api-tag {
+      display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px;
+      background: rgba(119,186,255,0.10); border: 1px solid rgba(119,186,255,0.2); color: #b8d8ff;
+    }
+
+    /* HISTORY TABLE */
+    .history-row td { font-size: 12px; }
+
+    /* EMPTY STATE */
+    .empty {
+      text-align: center; padding: 60px 20px;
+      background: rgba(255,255,255,0.02); border: 1px solid var(--line); border-radius: 14px;
+    }
+    .empty p { color: var(--muted); }
+
+    /* TREND BAR */
+    .trend { display: flex; gap: 3px; align-items: flex-end; height: 28px; }
+    .trend-bar { width: 10px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🧪 API Monitor Dashboard</h1>
+    <p style="margin:4px 0 0; color: var(--muted); font-size:13px;">
+      Open-Meteo · RestCountries · PokéAPI
+    </p>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a href="/health" class="btn">🏥 /health</a>
+    <a href="/export" class="btn">⬇ Export JSON</a>
+    <a href="/run" class="btn green">▶ Lancer un Run</a>
+  </div>
+</header>
+
+<div class="container">
+
+  {% if last_run %}
+
+  <!-- KPIs GLOBAUX -->
+  <div class="section-title">📊 Dernier run — {{ last_run.timestamp }}</div>
+  <div class="kpi-grid">
+    <div class="kpi-box">
+      <div class="label">Tests passés</div>
+      <div class="value ok">{{ last_run.summary.passed }}</div>
+      <div class="sub">sur {{ last_run.summary.total }} au total</div>
+    </div>
+    <div class="kpi-box">
+      <div class="label">Tests échoués</div>
+      <div class="value {% if last_run.summary.failed > 0 %}bad{% else %}ok{% endif %}">{{ last_run.summary.failed }}</div>
+      <div class="sub">FAIL + ERROR : {{ last_run.summary.errors }}</div>
+    </div>
+    <div class="kpi-box">
+      <div class="label">Taux d'erreur</div>
+      <div class="value {% if last_run.summary.error_rate > 0.2 %}bad{% elif last_run.summary.error_rate > 0 %}warn{% else %}ok{% endif %}">
+        {{ "%.0f"|format(last_run.summary.error_rate * 100) }}%
+      </div>
+      <div class="sub">Disponibilité : {{ "%.0f"|format(last_run.summary.availability * 100) }}%</div>
+    </div>
+    <div class="kpi-box">
+      <div class="label">Latence moyenne</div>
+      <div class="value neutral">{{ last_run.summary.latency_ms_avg }} ms</div>
+      <div class="sub">p95 : {{ last_run.summary.latency_ms_p95 }} ms</div>
+    </div>
+  </div>
+
+  <!-- PAR API -->
+  <div class="section-title">🔍 Résultats par API</div>
+  <div class="api-grid">
+    {% for api_name, stats in last_run.per_api.items() %}
+    <div class="api-card">
+      <h3>{{ api_name }}</h3>
+      <div class="api-stat"><span>✅ Passés</span><span class="ok">{{ stats.passed }} / {{ stats.total }}</span></div>
+      <div class="api-stat"><span>❌ Échoués</span><span class="{% if stats.failed > 0 %}bad{% else %}muted{% endif %}">{{ stats.failed }}</span></div>
+      <div class="api-stat"><span>⚠ Erreurs</span><span class="{% if stats.errors > 0 %}warn{% else %}muted{% endif %}">{{ stats.errors }}</span></div>
+      <div class="api-stat"><span>⏱ Latence moy.</span><span>{{ stats.latency_avg_ms }} ms</span></div>
+      <div class="api-stat"><span>⏱ p95</span><span>{{ stats.latency_p95_ms }} ms</span></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- DÉTAIL DES TESTS -->
+  <div class="section-title">🧩 Détail des tests du dernier run</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>API</th>
+          <th>Test</th>
+          <th>Statut</th>
+          <th>Latence</th>
+          <th>Détails</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in last_run.tests %}
+        <tr>
+          <td><span class="api-tag">{{ t.api }}</span></td>
+          <td><code style="font-size:12px; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:6px;">{{ t.name }}</code></td>
+          <td><span class="badge {{ t.status }}">{{ t.status }}</span></td>
+          <td>{% if t.latency_ms %}{{ t.latency_ms }} ms{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
+          <td style="color:var(--muted); font-size:12px;">{{ t.details or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div class="empty">
+    <p style="font-size:40px; margin:0">🚀</p>
+    <p>Aucun run enregistré pour l'instant.</p>
+    <a href="/run" class="btn green" style="display:inline-block; margin-top:10px;">▶ Lancer le premier run</a>
+  </div>
+  {% endif %}
+
+  <!-- HISTORIQUE -->
+  {% if runs %}
+  <div class="section-title">📜 Historique des runs</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Timestamp</th>
+          <th>Passés / Total</th>
+          <th>Taux d'erreur</th>
+          <th>Lat. moy.</th>
+          <th>Dispo.</th>
+          <th>Détail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+        <tr class="history-row">
+          <td style="color:var(--muted)">{{ run.id }}</td>
+          <td>{{ run.timestamp }}</td>
+          <td>
+            <span class="{% if run.summary.failed == 0 %}ok{% else %}bad{% endif %}">
+              {{ run.summary.passed }}
+            </span> / {{ run.summary.total }}
+          </td>
+          <td class="{% if run.summary.error_rate > 0.2 %}bad{% elif run.summary.error_rate > 0 %}warn{% else %}ok{% endif %}">
+            {{ "%.0f"|format(run.summary.error_rate * 100) }}%
+          </td>
+          <td>{{ run.summary.latency_ms_avg }} ms</td>
+          <td class="{% if run.summary.availability >= 0.9 %}ok{% elif run.summary.availability >= 0.6 %}warn{% else %}bad{% endif %}">
+            {{ "%.0f"|format(run.summary.availability * 100) }}%
+          </td>
+          <td><a href="/run/{{ run.id }}">JSON ↗</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>
