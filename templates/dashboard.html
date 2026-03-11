@@ -4,100 +4,92 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>API Monitor — Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg:#0b1020; --muted:#aab4d4; --text:#e9edff;
-      --accent:#77baff; --ok:#62d6a0; --warn:#ffcc66; --bad:#ff6b7a;
-      --line:rgba(255,255,255,0.08);
+      --bg:#080e1f; --muted:#8a96c0; --text:#e9edff;
+      --accent:#7eb8ff; --ok:#4ee89a; --warn:#ffd166; --bad:#ff6b8a;
+      --line:rgba(255,255,255,0.07); --card:rgba(255,255,255,0.035);
     }
     * { box-sizing:border-box; margin:0; padding:0; }
     body {
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background: radial-gradient(1200px 600px at 10% 0%, #172257 0%, var(--bg) 60%);
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 900px 500px at 0% 0%, #1a2d6e44 0%, transparent 70%),
+        radial-gradient(ellipse 600px 400px at 100% 100%, #2d1a6e33 0%, transparent 70%);
       color: var(--text); line-height:1.5; min-height:100vh;
     }
     a { color:var(--accent); text-decoration:none; }
     a:hover { text-decoration:underline; }
-
-    /* ── HEADER ── */
     header {
-      max-width:1100px; margin:0 auto; padding:28px 20px 14px;
-      display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;
+      max-width:1200px; margin:0 auto; padding:30px 24px 16px;
+      display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;
     }
-    .logo { font-size:22px; font-weight:700; }
-    .logo span { color:var(--muted); font-size:13px; font-weight:400; display:block; margin-top:2px; }
+    .logo { font-size:24px; font-weight:800; }
+    .logo .sub { font-size:13px; font-weight:400; color:var(--muted); margin-top:3px; }
     .actions { display:flex; gap:8px; flex-wrap:wrap; }
     .btn {
-      padding:8px 16px; border-radius:10px;
-      background:rgba(119,186,255,0.15); border:1px solid rgba(119,186,255,0.30);
-      color:var(--text); font-size:13px; font-weight:600; white-space:nowrap;
+      padding:9px 18px; border-radius:12px;
+      background:rgba(126,184,255,0.12); border:1px solid rgba(126,184,255,0.25);
+      color:var(--text); font-size:13px; font-weight:600;
     }
-    .btn:hover { filter:brightness(1.12); text-decoration:none; }
-    .btn.run { background:rgba(98,214,160,0.15); border-color:rgba(98,214,160,0.30); }
-
-    /* ── LAYOUT ── */
-    .container { max-width:1100px; margin:0 auto; padding:0 20px 48px; }
+    .btn:hover { background:rgba(126,184,255,0.22); text-decoration:none; }
+    .btn.run { background:linear-gradient(135deg,rgba(78,232,154,0.25),rgba(78,200,232,0.15)); border-color:rgba(78,232,154,0.35); }
+    .btn.run:hover { background:linear-gradient(135deg,rgba(78,232,154,0.35),rgba(78,200,232,0.25)); }
+    .container { max-width:1200px; margin:0 auto; padding:0 24px 56px; }
     .section-title {
-      font-size:14px; font-weight:600; color:#c8d0f0;
-      margin:28px 0 12px; letter-spacing:.04em; text-transform:uppercase;
+      font-size:12px; font-weight:700; color:var(--muted);
+      margin:32px 0 14px; letter-spacing:.1em; text-transform:uppercase;
+      display:flex; align-items:center; gap:8px;
     }
-
-    /* ── KPI ── */
-    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+    .section-title::after { content:''; flex:1; height:1px; background:var(--line); }
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
     .kpi-box {
-      background:rgba(255,255,255,0.03); border:1px solid var(--line);
-      border-radius:14px; padding:16px 18px;
+      background:var(--card); border:1px solid var(--line);
+      border-radius:16px; padding:18px 20px; position:relative; overflow:hidden;
     }
-    .kpi-box .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
-    .kpi-box .value { font-size:32px; font-weight:700; margin-top:4px; }
-    .kpi-box .sub   { font-size:11px; color:var(--muted); margin-top:3px; }
-    .ok      { color:var(--ok); }
-    .warn    { color:var(--warn); }
-    .bad     { color:var(--bad); }
-    .neutral { color:var(--accent); }
-
-    /* ── API CARDS ── */
-    .api-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
+    .kpi-box::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      background:var(--accent-color, var(--accent));
+    }
+    .kpi-box .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
+    .kpi-box .value { font-size:36px; font-weight:800; margin-top:6px; color:var(--accent-color, var(--text)); }
+    .kpi-box .sub   { font-size:11px; color:var(--muted); margin-top:4px; }
+    .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .charts-grid .wide { grid-column:1 / -1; }
+    @media(max-width:800px){ .charts-grid { grid-template-columns:1fr; } .charts-grid .wide { grid-column:1; } }
+    .chart-card {
+      background:var(--card); border:1px solid var(--line);
+      border-radius:16px; padding:20px 22px;
+    }
+    .chart-card h3 { font-size:14px; font-weight:600; margin-bottom:16px; color:#d0d8ff; }
+    .api-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
     .api-card {
-      background:rgba(255,255,255,0.03); border:1px solid var(--line);
-      border-radius:14px; padding:16px 18px;
+      background:var(--card); border:1px solid var(--line);
+      border-radius:16px; padding:18px 20px;
+      border-top:3px solid var(--api-color, var(--accent));
     }
-    .api-card h3 { font-size:15px; margin-bottom:10px; }
-    .api-stat { display:flex; justify-content:space-between; font-size:13px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .api-card h3 { font-size:15px; font-weight:700; margin-bottom:12px; }
+    .api-stat { display:flex; justify-content:space-between; font-size:13px; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
     .api-stat:last-child { border-bottom:none; }
-    .api-stat .val { color:var(--muted); }
-
-    /* ── TABLE ── */
-    .table-wrap { overflow:auto; border-radius:14px; border:1px solid var(--line); }
+    .api-stat .val { color:var(--muted); font-weight:500; }
+    .progress-bar { height:4px; border-radius:2px; background:rgba(255,255,255,0.08); margin-top:10px; overflow:hidden; }
+    .progress-fill { height:100%; border-radius:2px; }
+    .table-wrap { overflow:auto; border-radius:16px; border:1px solid var(--line); }
     table { width:100%; border-collapse:collapse; font-size:13px; }
-    th { background:rgba(119,186,255,0.08); padding:10px 14px; text-align:left; font-weight:600; color:#c8d0f0; white-space:nowrap; }
-    td { padding:9px 14px; border-top:1px solid var(--line); vertical-align:middle; }
+    th { background:rgba(126,184,255,0.07); padding:11px 16px; text-align:left; font-weight:600; color:#b0bcdf; white-space:nowrap; }
+    td { padding:10px 16px; border-top:1px solid var(--line); vertical-align:middle; }
     tr:hover td { background:rgba(255,255,255,0.015); }
-
-    .badge {
-      display:inline-block; padding:2px 9px; border-radius:999px;
-      font-size:11px; font-weight:700; letter-spacing:.03em;
-    }
-    .badge.PASS  { background:rgba(98,214,160,0.12);  color:var(--ok);   border:1px solid rgba(98,214,160,0.28); }
-    .badge.FAIL  { background:rgba(255,107,122,0.12); color:var(--bad);  border:1px solid rgba(255,107,122,0.28); }
-    .badge.ERROR { background:rgba(255,204,102,0.12); color:var(--warn); border:1px solid rgba(255,204,102,0.28); }
-
-    .api-tag {
-      display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px;
-      background:rgba(119,186,255,0.10); border:1px solid rgba(119,186,255,0.2); color:#b8d8ff;
-    }
-    code {
-      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-      background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:6px; font-size:12px;
-    }
-
-    /* ── EMPTY ── */
-    .empty {
-      text-align:center; padding:64px 20px;
-      background:rgba(255,255,255,0.02); border:1px solid var(--line); border-radius:14px;
-    }
-    .empty .icon { font-size:48px; margin-bottom:12px; }
-    .empty p { color:var(--muted); margin-bottom:16px; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+    .badge.PASS  { background:rgba(78,232,154,0.12);  color:var(--ok);   border:1px solid rgba(78,232,154,0.3); }
+    .badge.FAIL  { background:rgba(255,107,138,0.12); color:var(--bad);  border:1px solid rgba(255,107,138,0.3); }
+    .badge.ERROR { background:rgba(255,209,102,0.12); color:var(--warn); border:1px solid rgba(255,209,102,0.3); }
+    .api-tag { display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px; background:rgba(126,184,255,0.10); border:1px solid rgba(126,184,255,0.2); color:#b8d8ff; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:rgba(255,255,255,0.06); padding:2px 7px; border-radius:6px; font-size:12px; }
+    .empty { text-align:center; padding:72px 20px; background:var(--card); border:1px solid var(--line); border-radius:16px; }
+    .empty p { color:var(--muted); margin-bottom:18px; font-size:15px; }
+    .ok { color:var(--ok); } .warn { color:var(--warn); } .bad { color:var(--bad); }
   </style>
 </head>
 <body>
@@ -105,7 +97,7 @@
 <header>
   <div class="logo">
     🧪 API Monitor
-    <span>Open-Meteo &nbsp;·&nbsp; RestCountries &nbsp;·&nbsp; PokéAPI</span>
+    <div class="sub">Open-Meteo · RestCountries · PokéAPI</div>
   </div>
   <div class="actions">
     <a href="/health" class="btn">🏥 Health</a>
@@ -116,57 +108,75 @@
 
 <div class="container">
 
-  {% if last_run %}
+{% if last_run %}
 
-  <!-- KPIs -->
   <div class="section-title">📊 Dernier run — {{ last_run.timestamp }}</div>
   <div class="kpi-grid">
-    <div class="kpi-box">
+    <div class="kpi-box" style="--accent-color:var(--ok)">
       <div class="label">Tests passés</div>
-      <div class="value ok">{{ last_run.summary.passed }}</div>
-      <div class="sub">sur {{ last_run.summary.total }} total</div>
+      <div class="value">{{ last_run.summary.passed }}</div>
+      <div class="sub">sur {{ last_run.summary.total }} au total</div>
     </div>
-    <div class="kpi-box">
+    <div class="kpi-box" style="--accent-color:{% if last_run.summary.failed > 0 %}var(--bad){% else %}var(--ok){% endif %}">
       <div class="label">Échecs</div>
-      <div class="value {% if last_run.summary.failed > 0 %}bad{% else %}ok{% endif %}">{{ last_run.summary.failed }}</div>
+      <div class="value">{{ last_run.summary.failed }}</div>
       <div class="sub">Erreurs réseau : {{ last_run.summary.errors }}</div>
     </div>
-    <div class="kpi-box">
+    <div class="kpi-box" style="--accent-color:{% if last_run.summary.error_rate > 0.2 %}var(--bad){% elif last_run.summary.error_rate > 0 %}var(--warn){% else %}var(--ok){% endif %}">
       <div class="label">Taux d'erreur</div>
-      <div class="value {% if last_run.summary.error_rate > 0.2 %}bad{% elif last_run.summary.error_rate > 0 %}warn{% else %}ok{% endif %}">
-        {{ "%.0f"|format(last_run.summary.error_rate * 100) }}%
-      </div>
+      <div class="value">{{ "%.0f"|format(last_run.summary.error_rate * 100) }}%</div>
       <div class="sub">Disponibilité : {{ "%.0f"|format(last_run.summary.availability * 100) }}%</div>
     </div>
-    <div class="kpi-box">
+    <div class="kpi-box" style="--accent-color:var(--accent)">
       <div class="label">Latence moyenne</div>
-      <div class="value neutral">{{ last_run.summary.latency_ms_avg }}<small style="font-size:16px"> ms</small></div>
+      <div class="value">{{ last_run.summary.latency_ms_avg }}<span style="font-size:18px;font-weight:400"> ms</span></div>
       <div class="sub">p95 : {{ last_run.summary.latency_ms_p95 }} ms</div>
     </div>
   </div>
 
-  <!-- Par API -->
+  <div class="section-title">📈 Visualisations</div>
+  <div class="charts-grid">
+
+    <div class="chart-card wide">
+      <h3>⏱ Latence moyenne par run</h3>
+      <div style="position:relative;height:220px"><canvas id="chartLatency"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <h3>✅ Passés / ❌ Échoués par run</h3>
+      <div style="position:relative;height:220px"><canvas id="chartPassFail"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <h3>🔍 Comparaison par API (dernier run)</h3>
+      <div style="position:relative;height:220px"><canvas id="chartPerApi"></canvas></div>
+    </div>
+
+  </div>
+
   <div class="section-title">🔍 Résultats par API</div>
   <div class="api-grid">
+    {% set api_colors = ["#7eb8ff","#4ee89a","#ffd166"] %}
     {% for api_name, s in last_run.per_api.items() %}
-    <div class="api-card">
+    {% set color = api_colors[loop.index0 % 3] %}
+    <div class="api-card" style="--api-color:{{ color }}">
       <h3>{{ api_name }}</h3>
-      <div class="api-stat"><span>✅ Passés</span>   <span class="val ok">{{ s.passed }} / {{ s.total }}</span></div>
-      <div class="api-stat"><span>❌ Échoués</span>  <span class="val {% if s.failed > 0 %}bad{% endif %}">{{ s.failed }}</span></div>
-      <div class="api-stat"><span>⚠ Erreurs</span>  <span class="val {% if s.errors > 0 %}warn{% endif %}">{{ s.errors }}</span></div>
-      <div class="api-stat"><span>⏱ Lat. moy.</span><span class="val">{{ s.latency_avg_ms }} ms</span></div>
-      <div class="api-stat"><span>⏱ p95</span>      <span class="val">{{ s.latency_p95_ms }} ms</span></div>
+      <div class="api-stat"><span>✅ Passés</span>    <span class="val ok">{{ s.passed }} / {{ s.total }}</span></div>
+      <div class="api-stat"><span>❌ Échoués</span>   <span class="val {% if s.failed > 0 %}bad{% endif %}">{{ s.failed }}</span></div>
+      <div class="api-stat"><span>⚠ Erreurs</span>   <span class="val {% if s.errors > 0 %}warn{% endif %}">{{ s.errors }}</span></div>
+      <div class="api-stat"><span>⏱ Lat. moy.</span> <span class="val">{{ s.latency_avg_ms }} ms</span></div>
+      <div class="api-stat"><span>⏱ p95</span>       <span class="val">{{ s.latency_p95_ms }} ms</span></div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:{{ (s.passed / s.total * 100)|round }}%;background:{{ color }}"></div>
+      </div>
     </div>
     {% endfor %}
   </div>
 
-  <!-- Détail tests -->
   <div class="section-title">🧩 Détail des tests</div>
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr><th>API</th><th>Test</th><th>Statut</th><th>Latence</th><th>Détails</th></tr>
-      </thead>
+      <thead><tr><th>API</th><th>Test</th><th>Statut</th><th>Latence</th><th>Détails</th></tr></thead>
       <tbody>
         {% for t in last_run.tests %}
         <tr>
@@ -181,38 +191,28 @@
     </table>
   </div>
 
-  {% else %}
+{% else %}
   <div class="empty">
-    <div class="icon">🚀</div>
+    <div style="font-size:52px;margin-bottom:14px">🚀</div>
     <p>Aucun run enregistré pour l'instant.</p>
     <a href="/run" class="btn run">▶ Lancer le premier run</a>
   </div>
-  {% endif %}
+{% endif %}
 
-  <!-- Historique -->
   {% if runs %}
   <div class="section-title">📜 Historique des runs</div>
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr><th>#</th><th>Timestamp</th><th>Passés / Total</th><th>Taux d'erreur</th><th>Lat. moy.</th><th>Disponibilité</th><th>JSON</th></tr>
-      </thead>
+      <thead><tr><th>#</th><th>Timestamp</th><th>Passés / Total</th><th>Taux d'erreur</th><th>Lat. moy.</th><th>Disponibilité</th><th>JSON</th></tr></thead>
       <tbody>
         {% for run in runs %}
         <tr>
           <td style="color:var(--muted)">{{ run.id }}</td>
-          <td>{{ run.timestamp }}</td>
-          <td>
-            <span class="{% if run.summary.failed == 0 %}ok{% else %}bad{% endif %}">{{ run.summary.passed }}</span>
-            <span style="color:var(--muted)"> / {{ run.summary.total }}</span>
-          </td>
-          <td class="{% if run.summary.error_rate > 0.2 %}bad{% elif run.summary.error_rate > 0 %}warn{% else %}ok{% endif %}">
-            {{ "%.0f"|format(run.summary.error_rate * 100) }}%
-          </td>
+          <td style="font-size:12px">{{ run.timestamp }}</td>
+          <td><span class="{% if run.summary.failed == 0 %}ok{% else %}bad{% endif %}">{{ run.summary.passed }}</span> <span style="color:var(--muted)">/ {{ run.summary.total }}</span></td>
+          <td class="{% if run.summary.error_rate > 0.2 %}bad{% elif run.summary.error_rate > 0 %}warn{% else %}ok{% endif %}">{{ "%.0f"|format(run.summary.error_rate * 100) }}%</td>
           <td style="color:var(--muted)">{{ run.summary.latency_ms_avg }} ms</td>
-          <td class="{% if run.summary.availability >= 0.9 %}ok{% elif run.summary.availability >= 0.6 %}warn{% else %}bad{% endif %}">
-            {{ "%.0f"|format(run.summary.availability * 100) }}%
-          </td>
+          <td class="{% if run.summary.availability >= 0.9 %}ok{% elif run.summary.availability >= 0.6 %}warn{% else %}bad{% endif %}">{{ "%.0f"|format(run.summary.availability * 100) }}%</td>
           <td><a href="/run/{{ run.id }}">↗</a></td>
         </tr>
         {% endfor %}
@@ -222,5 +222,91 @@
   {% endif %}
 
 </div>
+
+{% if runs %}
+<script>
+  const runs = {{ runs | tojson }};
+  const runsChron = [...runs].reverse();
+  const labels    = runsChron.map(r => r.timestamp.slice(5,16));
+  const latencies = runsChron.map(r => r.summary.latency_ms_avg);
+  const passed    = runsChron.map(r => r.summary.passed);
+  const failed    = runsChron.map(r => r.summary.failed + r.summary.errors);
+
+  const scaleStyle = {
+    x: { ticks:{color:'#8a96c0',font:{size:11}}, grid:{color:'rgba(255,255,255,0.05)'} },
+    y: { ticks:{color:'#8a96c0',font:{size:11}}, grid:{color:'rgba(255,255,255,0.05)'} }
+  };
+  const legendStyle = { labels:{ color:'#8a96c0', font:{size:12}, boxWidth:12 } };
+
+  // 1. Courbe latence
+  new Chart(document.getElementById('chartLatency'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Latence moy. (ms)',
+        data: latencies,
+        borderColor: '#7eb8ff',
+        backgroundColor: 'rgba(126,184,255,0.10)',
+        tension: 0.4, fill: true,
+        pointBackgroundColor: '#7eb8ff',
+        pointRadius: 4, pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:legendStyle, tooltip:{ callbacks:{ label: c => ` ${c.parsed.y} ms` } } },
+      scales: scaleStyle
+    }
+  });
+
+  // 2. Barres passés/échoués
+  new Chart(document.getElementById('chartPassFail'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Passés',  data:passed, backgroundColor:'rgba(78,232,154,0.75)', borderColor:'rgba(78,232,154,1)',  borderWidth:1, borderRadius:5 },
+        { label:'Échoués', data:failed, backgroundColor:'rgba(255,107,138,0.75)',borderColor:'rgba(255,107,138,1)', borderWidth:1, borderRadius:5 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:legendStyle },
+      scales: {
+        x: { ...scaleStyle.x, stacked:true },
+        y: { ...scaleStyle.y, stacked:true }
+      }
+    }
+  });
+
+  // 3. Par API
+  {% if last_run %}
+  const perApi   = {{ last_run.per_api | tojson }};
+  const apiNames = Object.keys(perApi);
+  const apiPass  = apiNames.map(k => perApi[k].passed);
+  const apiFail  = apiNames.map(k => perApi[k].failed + perApi[k].errors);
+  const apiColors = ['rgba(126,184,255,0.75)','rgba(78,232,154,0.75)','rgba(255,209,102,0.75)'];
+  const apiBorders= ['rgba(126,184,255,1)',   'rgba(78,232,154,1)',   'rgba(255,209,102,1)'];
+
+  new Chart(document.getElementById('chartPerApi'), {
+    type: 'bar',
+    data: {
+      labels: apiNames,
+      datasets: [
+        { label:'Passés',  data:apiPass, backgroundColor:apiColors, borderColor:apiBorders, borderWidth:1, borderRadius:6 },
+        { label:'Échoués', data:apiFail, backgroundColor:'rgba(255,107,138,0.65)', borderColor:'rgba(255,107,138,1)', borderWidth:1, borderRadius:6 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:legendStyle },
+      scales: scaleStyle
+    }
+  });
+  {% endif %}
+</script>
+{% endif %}
+
 </body>
 </html>
