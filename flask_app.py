@@ -1,12 +1,20 @@
-# ── Ajouter ces imports en haut ──
-from flask import Response
+from flask import Flask, render_template_string, render_template, jsonify, request, redirect, url_for, session, Response
+from flask import json
+from urllib.request import urlopen
+from werkzeug.utils import secure_filename
+import sqlite3
 import datetime
 import storage
 from tester.runner import run_all
 
+app = Flask(__name__)
 storage.init_db()
 
-# ── Ajouter ces routes à la fin, avant le if __name__ ──
+
+@app.get("/")
+def consignes():
+    return render_template('consignes.html')
+
 
 @app.route("/run")
 def trigger_run():
@@ -14,11 +22,13 @@ def trigger_run():
     storage.save_run(report)
     return redirect(url_for("dashboard"))
 
+
 @app.route("/run/json")
 def trigger_run_json():
     report = run_all()
     storage.save_run(report)
     return jsonify(report)
+
 
 @app.route("/dashboard")
 def dashboard():
@@ -26,12 +36,14 @@ def dashboard():
     last_run = storage.get_run(runs[0]["id"]) if runs else None
     return render_template("dashboard.html", runs=runs, last_run=last_run)
 
+
 @app.route("/run/<int:run_id>")
 def run_detail(run_id):
     run = storage.get_run(run_id)
     if not run:
         return jsonify({"error": "Run not found"}), 404
     return jsonify(run)
+
 
 @app.route("/health")
 def health():
@@ -50,6 +62,7 @@ def health():
         "checked_at": datetime.datetime.now().isoformat(),
     })
 
+
 @app.route("/export")
 def export_json():
     runs = storage.list_runs(limit=20)
@@ -59,3 +72,7 @@ def export_json():
         mimetype="application/json",
         headers={"Content-Disposition": "attachment; filename=runs_export.json"},
     )
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
