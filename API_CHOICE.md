@@ -1,122 +1,108 @@
 # API Choice
 
-- **Étudiant** : [Votre nom]
-- **APIs choisies** : Open-Meteo, RestCountries, PokéAPI
-- **URL base** :
+- Étudiant : [Votre nom]
+- API choisie : Open-Meteo, RestCountries, PokéAPI, JokeAPI, Dog CEO
+- URL base :
   - https://api.open-meteo.com/v1
   - https://restcountries.com/v3.1
   - https://pokeapi.co/api/v2
-- **Documentation officielle / README** :
+  - https://v2.jokeapi.dev
+  - https://dog.ceo/api
+- Documentation officielle / README :
   - Open-Meteo : https://open-meteo.com/en/docs
   - RestCountries : https://restcountries.com/
   - PokéAPI : https://pokeapi.co/docs/v2
-- **Auth** : None (aucune clé API requise pour les 3 APIs)
+  - JokeAPI : https://jokeapi.dev/
+  - Dog CEO : https://dog.ceo/dog-api/
+- Auth : None (aucune clé API requise pour les 5 APIs)
+- Endpoints testés :
+  - GET https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35&current_weather=true
+  - GET https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35
+  - GET https://api.open-meteo.com/v1/forecast?latitude=999&longitude=999&current_weather=true
+  - GET https://restcountries.com/v3.1/name/france
+  - GET https://restcountries.com/v3.1/name/germany
+  - GET https://restcountries.com/v3.1/alpha/FR
+  - GET https://restcountries.com/v3.1/name/xyzinexistant123
+  - GET https://pokeapi.co/api/v2/pokemon/pikachu
+  - GET https://pokeapi.co/api/v2/pokemon/1
+  - GET https://pokeapi.co/api/v2/pokemon/xxxxxxinexistant
+  - GET https://v2.jokeapi.dev/joke/Any?safe-mode
+  - GET https://v2.jokeapi.dev/joke/Programming?safe-mode
+  - GET https://v2.jokeapi.dev/joke/CategorieQuiNExistePas
+  - GET https://dog.ceo/api/breeds/image/random
+  - GET https://dog.ceo/api/breeds/list/all
+  - GET https://dog.ceo/api/breed/husky/images/random
+  - GET https://dog.ceo/api/breed/racexxinexistante/images/random
+- Hypothèses de contrat (champs attendus, types, codes) :
 
----
+  ### Open-Meteo
+  | Champ | Type | Contrainte |
+  |-------|------|------------|
+  | latitude | float | présent dans la réponse |
+  | longitude | float | présent dans la réponse |
+  | current_weather | object | présent si paramètre demandé |
+  | current_weather.temperature | float/int | nombre valide |
+  | current_weather.windspeed | float/int | nombre valide |
+  | current_weather.weathercode | int | présent |
+  - HTTP 200 sur coordonnées valides
+  - HTTP 400 sur coordonnées hors plage (latitude=999)
 
-## Endpoints testés
+  ### RestCountries
+  | Champ | Type | Contrainte |
+  |-------|------|------------|
+  | name | object | présent |
+  | capital | list | présent |
+  | population | int | strictement positif |
+  | region | string | chaîne non vide |
+  | cca2 | string | exactement 2 lettres majuscules |
+  - HTTP 200 sur pays valide, réponse de type liste
+  - HTTP 404 sur pays inexistant
 
-### Open-Meteo
-  - `GET /forecast?latitude=48.85&longitude=2.35&current_weather=true`
-  - `GET /forecast?latitude=48.85&longitude=2.35` (sans current_weather)
-  - `GET /forecast?latitude=999&longitude=999` (entrée invalide → 400 attendu)
+  ### PokéAPI
+  | Champ | Type | Contrainte |
+  |-------|------|------------|
+  | id | int | = 25 pour pikachu |
+  | name | string | = "pikachu" |
+  | base_experience | int | présent |
+  | height | int | présent |
+  | weight | int | présent |
+  | abilities | list | non vide, ability.name = string, is_hidden = bool |
+  | types | list | non vide |
+  - HTTP 200 sur pokémon valide (par nom ou par id)
+  - HTTP 404 sur pokémon inexistant
 
-### RestCountries
-  - `GET /name/france`
-  - `GET /name/germany`
-  - `GET /alpha/FR`
-  - `GET /name/xyzinexistant123` (entrée invalide → 404 attendu)
+  ### JokeAPI
+  | Champ | Type | Contrainte |
+  |-------|------|------------|
+  | error | bool | false sur requête valide |
+  | category | string | correspond à la catégorie demandée |
+  | id | int | >= 0 |
+  | flags | object | dictionnaire non vide |
+  - HTTP 200 sur catégorie valide
+  - error=true ou HTTP 400 sur catégorie inexistante
 
-### PokéAPI
-  - `GET /pokemon/pikachu`
-  - `GET /pokemon/1`
-  - `GET /pokemon/xxxxxxinexistant` (entrée invalide → 404 attendu)
+  ### Dog CEO
+  | Champ | Type | Contrainte |
+  |-------|------|------------|
+  | status | string | = "success" sur requête valide |
+  | message | string | URL commençant par "https://" |
+  | message (list) | object | dictionnaire de races non vide |
+  - HTTP 200 sur race valide
+  - HTTP 404 ou status="error" sur race inexistante
+  - L'URL retournée contient le nom de la race demandée
 
----
+- Limites / rate limiting connu :
+  - Open-Meteo : pas de limite documentée, usage raisonnable conseillé (< 10 000 req/jour)
+  - RestCountries : aucune limite officielle
+  - PokéAPI : fair use, environ 100 req/min recommandé, cache conseillé
+  - JokeAPI : 120 requêtes/minute par IP, filtre safe-mode disponible
+  - Dog CEO : pas de limite documentée, usage raisonnable attendu
+  - Notre solution : maximum 32 requêtes par run, toutes en GET, aucune écriture
 
-## Hypothèses de contrat (champs attendus, types, codes)
-
-### Open-Meteo
-| Champ | Type | Contrainte |
-|-------|------|-----------|
-| `latitude` | float | présent dans la réponse |
-| `longitude` | float | présent dans la réponse |
-| `current_weather` | object | présent si demandé |
-| `current_weather.temperature` | float/int | nombre valide |
-| `current_weather.windspeed` | float/int | nombre valide |
-| `current_weather.weathercode` | int | présent |
-
-- HTTP 200 sur requête valide
-- HTTP 400 sur coordonnées hors plage (ex: latitude=999)
-
-### RestCountries
-| Champ | Type | Contrainte |
-|-------|------|-----------|
-| `name` | object | présent |
-| `capital` | list | présent |
-| `population` | int | > 0 |
-| `region` | string | non vide |
-| `cca2` | string | 2 lettres majuscules |
-
-- HTTP 200 sur pays valide, réponse est une liste
-- HTTP 404 sur pays inexistant
-
-### PokéAPI
-| Champ | Type | Contrainte |
-|-------|------|-----------|
-| `id` | int | = 25 pour pikachu |
-| `name` | string | = "pikachu" |
-| `base_experience` | int | présent |
-| `height` | int | présent |
-| `weight` | int | présent |
-| `abilities` | list | non vide, chaque item a `ability.name` (str) et `is_hidden` (bool) |
-| `types` | list | non vide |
-
-- HTTP 200 sur pokémon valide (nom ou id)
-- HTTP 404 sur pokémon inexistant
-
----
-
-## Limites / rate limiting connu
-
-- **Open-Meteo** : Pas de limite documentée sur usage raisonnable. Recommande < 10 000 req/jour.
-- **RestCountries** : Aucune limite officielle documentée. Usage respectueux attendu.
-- **PokéAPI** : Fair use recommandé, environ 100 req/min max. Cache fortement conseillé.
-
-Notre solution est limitée à **max 21 requêtes par run** (GET uniquement, non destructif).
-
----
-
-## Risques identifiés
-
-| API | Risque | Mitigation |
-|-----|--------|-----------|
-| Open-Meteo | Très stable, open-source | Timeout 5s + 1 retry |
-| RestCountries | Parfois lent, hébergement communautaire | Timeout 5s + 1 retry |
-| PokéAPI | Réponses volumineuses, latence variable | Timeout 5s + 1 retry, tests ciblés sur champs clés |
-
----
-
-## Planification
-
-> ⚠️ La tâche planifiée automatique (Scheduled Task PythonAnywhere) nécessite un compte payant.
-> Le run peut être déclenché **manuellement** via la route `/run` ou `/run/json` depuis le dashboard.
-
-Pour activer la planification avec un compte payant, ajouter dans **Scheduled Tasks** :
-```bash
-cd /home/<user>/mysite && python -c "from tester.runner import run_all; import storage; storage.save_run(run_all())"
-```
-
----
-
-## Checklist
-
-- [x] Repo GitHub créé
-- [x] Tests implémentés (21 tests, ≥ 6 requis)
-- [x] Timeout (5s) + 1 retry max
-- [x] Gestion 429 (backoff `Retry-After`) et 5xx (retry)
-- [x] Enregistrement des runs (SQLite via `storage.py`)
-- [x] Dashboard accessible (`/dashboard`)
-- [x] Endpoint `/health`
-- [x] Export JSON (`/export`)
-- [ ] Exécution planifiée (nécessite compte PythonAnywhere payant)
+- Risques (instabilité, downtime, CORS, etc.) :
+  - Open-Meteo : très stable, projet open-source activement maintenu, risque quasi nul
+  - RestCountries : hébergement communautaire, peut être lent ponctuellement, pas de SLA
+  - PokéAPI : réponses volumineuses (> 100 ko), latence p95 élevée, cache CDN en place
+  - JokeAPI : stable, contenu filtré en mode safe, dépend d'un projet communautaire
+  - Dog CEO : stable, images hébergées sur un CDN, dépend d'un projet indépendant
+  - Mitigation globale : timeout strict à 5s + 1 retry, gestion des codes 429 et 5xx
