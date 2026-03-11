@@ -154,6 +154,102 @@
     ::-webkit-scrollbar-track{background:transparent}
     ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
 
+    /* ── LOADING SCREEN ── */
+    #loading-screen{
+      position:fixed;inset:0;z-index:9999;
+      background:#030712;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;
+      opacity:0;pointer-events:none;transition:opacity .3s;
+    }
+    #loading-screen.active{opacity:1;pointer-events:all}
+
+    /* Grille animée de fond */
+    #loading-screen::before{
+      content:'';position:absolute;inset:0;
+      background-image:linear-gradient(rgba(0,212,255,0.04) 1px,transparent 1px),
+                       linear-gradient(90deg,rgba(0,212,255,0.04) 1px,transparent 1px);
+      background-size:40px 40px;
+      animation:gridMove 3s linear infinite;
+    }
+    @keyframes gridMove{from{background-position:0 0}to{background-position:40px 40px}}
+
+    /* Halos */
+    #loading-screen::after{
+      content:'';position:absolute;inset:0;pointer-events:none;
+      background:
+        radial-gradient(ellipse 600px 400px at 20% 30%,rgba(0,212,255,0.09) 0%,transparent 60%),
+        radial-gradient(ellipse 500px 350px at 80% 70%,rgba(191,0,255,0.07) 0%,transparent 60%);
+      animation:halosPulse 3s ease-in-out infinite alternate;
+    }
+    @keyframes halosPulse{from{opacity:.6}to{opacity:1}}
+
+    .loading-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:28px}
+
+    /* Anneau principal */
+    .speed-ring{position:relative;width:140px;height:140px}
+    .speed-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+    .speed-ring .track{fill:none;stroke:rgba(255,255,255,0.05);stroke-width:4}
+    .speed-ring .arc{
+      fill:none;stroke:url(#arcGrad);stroke-width:4;
+      stroke-linecap:round;
+      stroke-dasharray:360;stroke-dashoffset:360;
+      animation:arcSpin 1.8s cubic-bezier(.4,0,.2,1) infinite;
+    }
+    @keyframes arcSpin{
+      0%{stroke-dashoffset:360;transform:rotate(0deg);transform-origin:center}
+      50%{stroke-dashoffset:60}
+      100%{stroke-dashoffset:360;transform:rotate(360deg);transform-origin:center}
+    }
+    .speed-ring .inner-text{
+      position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    }
+    .speed-ring .icon-run{font-size:32px;animation:iconPulse 1s ease-in-out infinite alternate}
+    @keyframes iconPulse{from{transform:scale(1)}to{transform:scale(1.1)}}
+
+    /* Barre de progression */
+    .progress-track{
+      width:320px;height:4px;background:rgba(255,255,255,0.06);
+      border-radius:2px;overflow:hidden;
+      box-shadow:0 0 10px rgba(0,212,255,0.1);
+    }
+    .progress-fill-anim{
+      height:100%;width:0%;border-radius:2px;
+      background:linear-gradient(90deg,var(--c1),var(--c4));
+      box-shadow:0 0 12px rgba(0,212,255,0.6);
+      animation:progressAnim 2.5s ease-in-out forwards;
+    }
+    @keyframes progressAnim{
+      0%{width:0%} 30%{width:35%} 60%{width:65%} 85%{width:88%} 100%{width:95%}
+    }
+
+    /* Texte principal */
+    .loading-title{
+      font-size:22px;font-weight:700;letter-spacing:-.02em;
+      background:linear-gradient(90deg,var(--c1),var(--c4));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    }
+
+    /* Étapes animées */
+    .loading-steps{display:flex;flex-direction:column;gap:8px;width:320px}
+    .step{
+      display:flex;align-items:center;gap:10px;
+      font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
+      opacity:0;transform:translateX(-10px);transition:all .4s;
+    }
+    .step.visible{opacity:1;transform:translateX(0)}
+    .step.done{color:var(--ok)}
+    .step.active{color:var(--c1)}
+    .step-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+    .step.active .step-dot{animation:dotPulse .8s ease-in-out infinite alternate;box-shadow:0 0 6px var(--c1)}
+    @keyframes dotPulse{from{transform:scale(1)}to{transform:scale(1.5)}}
+
+    /* Compteur de vitesse */
+    .speed-counter{
+      font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);
+      display:flex;align-items:center;gap:8px;
+    }
+    .speed-num{color:var(--c1);font-weight:600;min-width:40px;text-align:right}
+
     @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
     .kpi{animation:fadeUp .4s ease both}
     .kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.10s}
@@ -201,7 +297,7 @@
     <div class="nav">
       <a href="/health" class="btn">🏥 Santé</a>
       <a href="/export" class="btn">⬇ Export</a>
-      <a href="/run" class="btn btn-run">▶ Lancer un run</a>
+      <a href="/run" class="btn btn-run" onclick="lancerRun(event)">▶ Lancer un run</a>
     </div>
   </div>
 </header>
@@ -421,7 +517,7 @@
   <div class="empty" style="margin-top:32px">
     <div style="font-size:56px">⚡</div>
     <p>Aucun run enregistré pour le moment.</p>
-    <a href="/run" class="btn btn-run">▶ Lancer le premier run</a>
+    <a href="/run" class="btn btn-run" onclick="lancerRun(event)">▶ Lancer le premier run</a>
   </div>
 {% endif %}
 
@@ -452,6 +548,113 @@
   {% endif %}
 
 </main>
+
+<!-- ── LOADING SCREEN ── -->
+<div id="loading-screen">
+  <div class="loading-content">
+
+    <div class="speed-ring">
+      <svg viewBox="0 0 120 120">
+        <defs>
+          <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#00d4ff"/>
+            <stop offset="100%" stop-color="#00ff88"/>
+          </linearGradient>
+        </defs>
+        <circle class="track" cx="60" cy="60" r="54"/>
+        <circle class="arc"   cx="60" cy="60" r="54"/>
+      </svg>
+      <div class="inner-text">
+        <span class="icon-run">⚡</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="loading-title">Exécution des tests en cours</div>
+    </div>
+
+    <div class="progress-track">
+      <div class="progress-fill-anim" id="progressBar"></div>
+    </div>
+
+    <div class="loading-steps" id="loadingSteps">
+      <div class="step" id="s1"><div class="step-dot"></div>Connexion aux APIs…</div>
+      <div class="step" id="s2"><div class="step-dot"></div>Open-Meteo — tests météo</div>
+      <div class="step" id="s3"><div class="step-dot"></div>RestCountries — tests pays</div>
+      <div class="step" id="s4"><div class="step-dot"></div>PokéAPI — tests Pokémon</div>
+      <div class="step" id="s5"><div class="step-dot"></div>JokeAPI — tests blagues</div>
+      <div class="step" id="s6"><div class="step-dot"></div>Dog CEO — tests races</div>
+      <div class="step" id="s7"><div class="step-dot"></div>Calcul des métriques QoS</div>
+      <div class="step" id="s8"><div class="step-dot"></div>Sauvegarde en base de données</div>
+    </div>
+
+    <div class="speed-counter">
+      Tests passés : <span class="speed-num" id="speedNum">0</span> / 32
+    </div>
+
+  </div>
+</div>
+
+<script>
+function lancerRun(e) {
+  e.preventDefault();
+  const screen = document.getElementById('loading-screen');
+  screen.classList.add('active');
+
+  // Réinitialise la barre
+  const bar = document.getElementById('progressBar');
+  bar.style.animation = 'none';
+  bar.offsetHeight; // reflow
+  bar.style.animation = '';
+
+  // Séquence des étapes
+  const steps = [
+    { id:'s1', delay:200,  duration:300  },
+    { id:'s2', delay:600,  duration:1200 },
+    { id:'s3', delay:1900, duration:1200 },
+    { id:'s4', delay:3200, duration:1500 },
+    { id:'s5', delay:4800, duration:800  },
+    { id:'s6', delay:5700, duration:900  },
+    { id:'s7', delay:6700, duration:500  },
+    { id:'s8', delay:7300, duration:400  },
+  ];
+
+  // Compteur de tests animé
+  const numEl = document.getElementById('speedNum');
+  let count = 0;
+  const counter = setInterval(() => {
+    count = Math.min(count + Math.floor(Math.random() * 3) + 1, 32);
+    numEl.textContent = count;
+    if (count >= 32) clearInterval(counter);
+  }, 250);
+
+  // Affichage progressif des étapes
+  steps.forEach(({id, delay, duration}) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      el.classList.add('visible', 'active');
+      setTimeout(() => {
+        el.classList.remove('active');
+        el.classList.add('done');
+        el.querySelector('.step-dot').textContent = '';
+        el.innerHTML = el.innerHTML.replace('Connexion aux APIs…',        '✓ Connexion établie')
+                                   .replace('Open-Meteo — tests météo',   '✓ Open-Meteo — 6 tests')
+                                   .replace('RestCountries — tests pays',  '✓ RestCountries — 7 tests')
+                                   .replace('PokéAPI — tests Pokémon',     '✓ PokéAPI — 7 tests')
+                                   .replace('JokeAPI — tests blagues',     '✓ JokeAPI — 6 tests')
+                                   .replace('Dog CEO — tests races',       '✓ Dog CEO — 6 tests')
+                                   .replace('Calcul des métriques QoS',    '✓ Métriques calculées')
+                                   .replace('Sauvegarde en base de données','✓ Données enregistrées');
+      }, duration);
+    }, delay);
+  });
+
+  // Redirection après l'animation
+  setTimeout(() => {
+    window.location.href = '/run';
+  }, 8200);
+}
+</script>
 
 {% if runs %}
 <script>
