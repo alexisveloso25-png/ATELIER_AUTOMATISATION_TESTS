@@ -1,6 +1,6 @@
 # API Choice
 
-- Étudiant : [Votre nom]
+- Étudiant : VELOSO Alexis
 - API choisie : Open-Meteo, RestCountries, PokéAPI, JokeAPI, Dog CEO
 - URL base :
   - https://api.open-meteo.com/v1
