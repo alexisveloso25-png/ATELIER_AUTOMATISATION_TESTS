@@ -3,188 +3,392 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>API Monitor — Dashboard</title>
+  <title>API Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg:#080e1f; --muted:#8a96c0; --text:#e9edff;
-      --accent:#7eb8ff; --ok:#4ee89a; --warn:#ffd166; --bad:#ff6b8a;
-      --line:rgba(255,255,255,0.07); --card:rgba(255,255,255,0.035);
+      --bg:       #05070f;
+      --surface:  #0c0f1e;
+      --border:   rgba(255,255,255,0.06);
+      --text:     #e8ecff;
+      --muted:    #5a6080;
+      --subtle:   #8892b0;
+
+      --c1: #6ee7f7;   /* cyan    — Open-Meteo  */
+      --c2: #a78bfa;   /* violet  — RestCountries */
+      --c3: #fbbf24;   /* amber   — PokéAPI     */
+      --c4: #34d399;   /* emerald — JokeAPI     */
+      --c5: #f87171;   /* rose    — Dog CEO     */
+
+      --ok:   #34d399;
+      --warn: #fbbf24;
+      --bad:  #f87171;
     }
-    * { box-sizing:border-box; margin:0; padding:0; }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      font-family: 'Syne', sans-serif;
       background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE + GRID TEXTURE ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
       background-image:
-        radial-gradient(ellipse 900px 500px at 0% 0%, #1a2d6e44 0%, transparent 70%),
-        radial-gradient(ellipse 600px 400px at 100% 100%, #2d1a6e33 0%, transparent 70%);
-      color: var(--text); line-height:1.5; min-height:100vh;
+        radial-gradient(ellipse 80vw 60vh at 10% -10%, rgba(110,231,247,.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60vw 50vh at 90% 110%, rgba(167,139,250,.05) 0%, transparent 60%);
     }
-    a { color:var(--accent); text-decoration:none; }
-    a:hover { text-decoration:underline; }
+
+    /* ── HEADER ── */
     header {
-      max-width:1200px; margin:0 auto; padding:30px 24px 16px;
-      display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;
+      position: relative; z-index: 10;
+      max-width: 1280px; margin: 0 auto;
+      padding: 36px 32px 0;
+      display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;
     }
-    .logo { font-size:24px; font-weight:800; }
-    .logo .sub { font-size:13px; font-weight:400; color:var(--muted); margin-top:3px; }
-    .actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+    .logo-block .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--c1); letter-spacing: .18em;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .logo-block h1 {
+      font-size: clamp(26px, 3.5vw, 40px);
+      font-weight: 800; letter-spacing: -.02em; line-height: 1;
+    }
+    .logo-block h1 span { color: var(--muted); }
+    .apis-pill {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px;
+    }
+    .apis-pill span {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; padding: 3px 10px; border-radius: 999px;
+      border: 1px solid; letter-spacing: .06em;
+    }
+
+    .nav-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; padding-top: 4px; }
     .btn {
-      padding:9px 18px; border-radius:12px;
-      background:rgba(126,184,255,0.12); border:1px solid rgba(126,184,255,0.25);
-      color:var(--text); font-size:13px; font-weight:600;
+      font-family: 'Syne', sans-serif;
+      font-size: 12px; font-weight: 700; letter-spacing: .04em;
+      padding: 10px 18px; border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--subtle); cursor: pointer; text-decoration: none;
+      transition: all .2s;
     }
-    .btn:hover { background:rgba(126,184,255,0.22); text-decoration:none; }
-    .btn.run { background:linear-gradient(135deg,rgba(78,232,154,0.25),rgba(78,200,232,0.15)); border-color:rgba(78,232,154,0.35); }
-    .btn.run:hover { background:linear-gradient(135deg,rgba(78,232,154,0.35),rgba(78,200,232,0.25)); }
-    .container { max-width:1200px; margin:0 auto; padding:0 24px 56px; }
-    .section-title {
-      font-size:12px; font-weight:700; color:var(--muted);
-      margin:32px 0 14px; letter-spacing:.1em; text-transform:uppercase;
-      display:flex; align-items:center; gap:8px;
+    .btn:hover { background: rgba(255,255,255,.08); color: var(--text); border-color: rgba(255,255,255,.12); }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--c1) 0%, var(--c2) 100%);
+      color: #05070f; border-color: transparent;
     }
-    .section-title::after { content:''; flex:1; height:1px; background:var(--line); }
-    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
-    .kpi-box {
-      background:var(--card); border:1px solid var(--line);
-      border-radius:16px; padding:18px 20px; position:relative; overflow:hidden;
+    .btn.primary:hover { filter: brightness(1.1); }
+
+    /* ── MAIN ── */
+    main {
+      position: relative; z-index: 10;
+      max-width: 1280px; margin: 0 auto; padding: 32px 32px 64px;
     }
-    .kpi-box::before {
-      content:''; position:absolute; top:0; left:0; right:0; height:3px;
-      background:var(--accent-color, var(--accent));
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; color: var(--muted); letter-spacing: .16em;
+      text-transform: uppercase; margin: 40px 0 16px;
+      display: flex; align-items: center; gap: 12px;
     }
-    .kpi-box .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
-    .kpi-box .value { font-size:36px; font-weight:800; margin-top:6px; color:var(--accent-color, var(--text)); }
-    .kpi-box .sub   { font-size:11px; color:var(--muted); margin-top:4px; }
-    .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .charts-grid .wide { grid-column:1 / -1; }
-    @media(max-width:800px){ .charts-grid { grid-template-columns:1fr; } .charts-grid .wide { grid-column:1; } }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── KPI STRIP ── */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 22px;
+      position: relative; overflow: hidden;
+      transition: border-color .2s;
+    }
+    .kpi:hover { border-color: rgba(255,255,255,.12); }
+    .kpi .accent-line {
+      position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--kpi-color, var(--c1)), transparent);
+    }
+    .kpi .lbl {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase;
+    }
+    .kpi .val {
+      font-size: 42px; font-weight: 800; letter-spacing: -.03em;
+      line-height: 1; margin: 8px 0 6px;
+      color: var(--kpi-color, var(--text));
+    }
+    .kpi .val small { font-size: 18px; font-weight: 400; opacity: .6; }
+    .kpi .hint { font-size: 12px; color: var(--muted); }
+
+    /* ── CHARTS ROW ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
+
+    .charts-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 900px) { .charts-row-2 { grid-template-columns: 1fr; } }
+
     .chart-card {
-      background:var(--card); border:1px solid var(--line);
-      border-radius:16px; padding:20px 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px;
     }
-    .chart-card h3 { font-size:14px; font-weight:600; margin-bottom:16px; color:#d0d8ff; }
-    .api-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+    .chart-card .ch-title {
+      font-size: 13px; font-weight: 700; color: var(--subtle);
+      margin-bottom: 18px; letter-spacing: -.01em;
+    }
+    .chart-card .ch-title em {
+      font-style: normal; color: var(--text);
+    }
+
+    /* ── API GRID ── */
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
     .api-card {
-      background:var(--card); border:1px solid var(--line);
-      border-radius:16px; padding:18px 20px;
-      border-top:3px solid var(--api-color, var(--accent));
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      position: relative; overflow: hidden;
+      transition: transform .2s, border-color .2s;
     }
-    .api-card h3 { font-size:15px; font-weight:700; margin-bottom:12px; }
-    .api-stat { display:flex; justify-content:space-between; font-size:13px; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
-    .api-stat:last-child { border-bottom:none; }
-    .api-stat .val { color:var(--muted); font-weight:500; }
-    .progress-bar { height:4px; border-radius:2px; background:rgba(255,255,255,0.08); margin-top:10px; overflow:hidden; }
-    .progress-fill { height:100%; border-radius:2px; }
-    .table-wrap { overflow:auto; border-radius:16px; border:1px solid var(--line); }
-    table { width:100%; border-collapse:collapse; font-size:13px; }
-    th { background:rgba(126,184,255,0.07); padding:11px 16px; text-align:left; font-weight:600; color:#b0bcdf; white-space:nowrap; }
-    td { padding:10px 16px; border-top:1px solid var(--line); vertical-align:middle; }
-    tr:hover td { background:rgba(255,255,255,0.015); }
-    .badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
-    .badge.PASS  { background:rgba(78,232,154,0.12);  color:var(--ok);   border:1px solid rgba(78,232,154,0.3); }
-    .badge.FAIL  { background:rgba(255,107,138,0.12); color:var(--bad);  border:1px solid rgba(255,107,138,0.3); }
-    .badge.ERROR { background:rgba(255,209,102,0.12); color:var(--warn); border:1px solid rgba(255,209,102,0.3); }
-    .api-tag { display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px; background:rgba(126,184,255,0.10); border:1px solid rgba(126,184,255,0.2); color:#b8d8ff; }
-    code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:rgba(255,255,255,0.06); padding:2px 7px; border-radius:6px; font-size:12px; }
-    .empty { text-align:center; padding:72px 20px; background:var(--card); border:1px solid var(--line); border-radius:16px; }
-    .empty p { color:var(--muted); margin-bottom:18px; font-size:15px; }
-    .ok { color:var(--ok); } .warn { color:var(--warn); } .bad { color:var(--bad); }
+    .api-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.1); }
+    .api-card .glow {
+      position: absolute; top: -40px; right: -40px;
+      width: 120px; height: 120px; border-radius: 50%;
+      background: var(--api-color, var(--c1));
+      opacity: .06; filter: blur(30px);
+    }
+    .api-card .api-name {
+      font-size: 14px; font-weight: 700; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .api-card .api-name .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--api-color, var(--c1));
+      flex-shrink: 0;
+    }
+    .api-card .stat-row {
+      display: flex; justify-content: space-between;
+      font-size: 12px; padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .api-card .stat-row:last-of-type { border-bottom: none; }
+    .api-card .stat-row .k { color: var(--muted); }
+    .api-card .stat-row .v { font-family: 'DM Mono', monospace; font-size: 11px; }
+    .api-card .pbar-wrap { margin-top: 12px; }
+    .api-card .pbar-bg { height: 3px; background: rgba(255,255,255,.06); border-radius: 2px; overflow: hidden; }
+    .api-card .pbar-fill { height: 100%; border-radius: 2px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+    .api-card .pbar-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 5px; text-align: right; }
+
+    /* ── TESTS TABLE ── */
+    .tbl-wrap { overflow: auto; border-radius: 16px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead th {
+      background: rgba(255,255,255,.025);
+      padding: 10px 16px; text-align: left;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; color: var(--muted);
+      letter-spacing: .1em; text-transform: uppercase;
+      white-space: nowrap;
+    }
+    tbody td { padding: 10px 16px; border-top: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:hover td { background: rgba(255,255,255,.015); }
+
+    .badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; font-weight: 500; letter-spacing: .06em;
+      padding: 3px 9px; border-radius: 6px;
+    }
+    .badge.PASS  { background: rgba(52,211,153,.12); color: var(--ok);   border: 1px solid rgba(52,211,153,.25); }
+    .badge.FAIL  { background: rgba(248,113,113,.12); color: var(--bad);  border: 1px solid rgba(248,113,113,.25); }
+    .badge.ERROR { background: rgba(251,191,36,.12);  color: var(--warn); border: 1px solid rgba(251,191,36,.25); }
+
+    .api-chip {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; padding: 2px 8px; border-radius: 5px;
+      border: 1px solid var(--chip-color, rgba(255,255,255,.1));
+      color: var(--chip-color, var(--subtle));
+      background: rgba(255,255,255,.03);
+    }
+    code {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--subtle);
+      background: rgba(255,255,255,.04); padding: 2px 6px; border-radius: 5px;
+    }
+
+    /* ── HISTORY ── */
+    .ok   { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad  { color: var(--bad); }
+    .mono { font-family: 'DM Mono', monospace; }
+
+    /* ── EMPTY ── */
+    .empty-state {
+      text-align: center; padding: 80px 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px;
+    }
+    .empty-state .icon { font-size: 56px; margin-bottom: 16px; }
+    .empty-state p { color: var(--muted); font-size: 15px; margin-bottom: 20px; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    🧪 API Monitor
-    <div class="sub">Open-Meteo · RestCountries · PokéAPI</div>
+  <div class="logo-block">
+    <div class="eyebrow">// API Monitor Dashboard</div>
+    <h1>Test <span>&</span> QoS</h1>
+    <div class="apis-pill">
+      <span style="color:var(--c1);border-color:rgba(110,231,247,.25);background:rgba(110,231,247,.06)">Open-Meteo</span>
+      <span style="color:var(--c2);border-color:rgba(167,139,250,.25);background:rgba(167,139,250,.06)">RestCountries</span>
+      <span style="color:var(--c3);border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.06)">PokéAPI</span>
+      <span style="color:var(--c4);border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.06)">JokeAPI</span>
+      <span style="color:var(--c5);border-color:rgba(248,113,113,.25);background:rgba(248,113,113,.06)">Dog CEO</span>
+    </div>
   </div>
-  <div class="actions">
+  <div class="nav-actions">
     <a href="/health" class="btn">🏥 Health</a>
-    <a href="/export" class="btn">⬇ Export JSON</a>
-    <a href="/run"    class="btn run">▶ Lancer un Run</a>
+    <a href="/export" class="btn">⬇ Export</a>
+    <a href="/run"    class="btn primary">▶ Run Now</a>
   </div>
 </header>
 
-<div class="container">
+<main>
 
 {% if last_run %}
 
-  <div class="section-title">📊 Dernier run — {{ last_run.timestamp }}</div>
-  <div class="kpi-grid">
-    <div class="kpi-box" style="--accent-color:var(--ok)">
-      <div class="label">Tests passés</div>
-      <div class="value">{{ last_run.summary.passed }}</div>
-      <div class="sub">sur {{ last_run.summary.total }} au total</div>
+  <!-- KPIs -->
+  <div class="section-label">Snapshot — {{ last_run.timestamp }}</div>
+  <div class="kpi-strip">
+    <div class="kpi" style="--kpi-color:var(--ok)">
+      <div class="accent-line"></div>
+      <div class="lbl">Tests passés</div>
+      <div class="val">{{ last_run.summary.passed }}<small>/{{ last_run.summary.total }}</small></div>
+      <div class="hint">{{ "%.0f"|format(last_run.summary.availability * 100) }}% disponibilité</div>
     </div>
-    <div class="kpi-box" style="--accent-color:{% if last_run.summary.failed > 0 %}var(--bad){% else %}var(--ok){% endif %}">
-      <div class="label">Échecs</div>
-      <div class="value">{{ last_run.summary.failed }}</div>
-      <div class="sub">Erreurs réseau : {{ last_run.summary.errors }}</div>
+    <div class="kpi" style="--kpi-color:{% if last_run.summary.failed > 0 %}var(--bad){% else %}var(--ok){% endif %}">
+      <div class="accent-line"></div>
+      <div class="lbl">Échecs</div>
+      <div class="val">{{ last_run.summary.failed }}</div>
+      <div class="hint">Erreurs réseau : {{ last_run.summary.errors }}</div>
     </div>
-    <div class="kpi-box" style="--accent-color:{% if last_run.summary.error_rate > 0.2 %}var(--bad){% elif last_run.summary.error_rate > 0 %}var(--warn){% else %}var(--ok){% endif %}">
-      <div class="label">Taux d'erreur</div>
-      <div class="value">{{ "%.0f"|format(last_run.summary.error_rate * 100) }}%</div>
-      <div class="sub">Disponibilité : {{ "%.0f"|format(last_run.summary.availability * 100) }}%</div>
+    <div class="kpi" style="--kpi-color:{% if last_run.summary.error_rate > 0.2 %}var(--bad){% elif last_run.summary.error_rate > 0 %}var(--warn){% else %}var(--ok){% endif %}">
+      <div class="accent-line"></div>
+      <div class="lbl">Taux d'erreur</div>
+      <div class="val">{{ "%.0f"|format(last_run.summary.error_rate * 100) }}<small>%</small></div>
+      <div class="hint">Dernier run</div>
     </div>
-    <div class="kpi-box" style="--accent-color:var(--accent)">
-      <div class="label">Latence moyenne</div>
-      <div class="value">{{ last_run.summary.latency_ms_avg }}<span style="font-size:18px;font-weight:400"> ms</span></div>
-      <div class="sub">p95 : {{ last_run.summary.latency_ms_p95 }} ms</div>
+    <div class="kpi" style="--kpi-color:var(--c1)">
+      <div class="accent-line"></div>
+      <div class="lbl">Latence moy.</div>
+      <div class="val">{{ last_run.summary.latency_ms_avg }}<small>ms</small></div>
+      <div class="hint">p95 : {{ last_run.summary.latency_ms_p95 }} ms</div>
     </div>
   </div>
 
-  <div class="section-title">📈 Visualisations</div>
-  <div class="charts-grid">
-
-    <div class="chart-card wide">
-      <h3>⏱ Latence moyenne par run</h3>
-      <div style="position:relative;height:220px"><canvas id="chartLatency"></canvas></div>
-    </div>
-
+  <!-- Charts row 1 -->
+  <div class="section-label">Tendances</div>
+  <div class="charts-row">
     <div class="chart-card">
-      <h3>✅ Passés / ❌ Échoués par run</h3>
-      <div style="position:relative;height:220px"><canvas id="chartPassFail"></canvas></div>
+      <div class="ch-title"><em>Latence</em> moyenne par run</div>
+      <div style="position:relative;height:200px"><canvas id="cLatency"></canvas></div>
     </div>
-
     <div class="chart-card">
-      <h3>🔍 Comparaison par API (dernier run)</h3>
-      <div style="position:relative;height:220px"><canvas id="chartPerApi"></canvas></div>
+      <div class="ch-title"><em>Pass / Fail</em> — dernier run</div>
+      <div style="position:relative;height:200px"><canvas id="cDonut"></canvas></div>
     </div>
-
   </div>
 
-  <div class="section-title">🔍 Résultats par API</div>
+  <!-- Charts row 2 -->
+  <div class="charts-row-2" style="margin-top:12px">
+    <div class="chart-card">
+      <div class="ch-title"><em>Passés / Échoués</em> par run</div>
+      <div style="position:relative;height:180px"><canvas id="cBars"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="ch-title"><em>Latence moy.</em> par API</div>
+      <div style="position:relative;height:180px"><canvas id="cApiLat"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Per-API cards -->
+  <div class="section-label">Par API</div>
   <div class="api-grid">
-    {% set api_colors = ["#7eb8ff","#4ee89a","#ffd166"] %}
+    {% set api_colors = ["var(--c1)","var(--c2)","var(--c3)","var(--c4)","var(--c5)"] %}
     {% for api_name, s in last_run.per_api.items() %}
-    {% set color = api_colors[loop.index0 % 3] %}
+    {% set color = api_colors[loop.index0 % 5] %}
     <div class="api-card" style="--api-color:{{ color }}">
-      <h3>{{ api_name }}</h3>
-      <div class="api-stat"><span>✅ Passés</span>    <span class="val ok">{{ s.passed }} / {{ s.total }}</span></div>
-      <div class="api-stat"><span>❌ Échoués</span>   <span class="val {% if s.failed > 0 %}bad{% endif %}">{{ s.failed }}</span></div>
-      <div class="api-stat"><span>⚠ Erreurs</span>   <span class="val {% if s.errors > 0 %}warn{% endif %}">{{ s.errors }}</span></div>
-      <div class="api-stat"><span>⏱ Lat. moy.</span> <span class="val">{{ s.latency_avg_ms }} ms</span></div>
-      <div class="api-stat"><span>⏱ p95</span>       <span class="val">{{ s.latency_p95_ms }} ms</span></div>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width:{{ (s.passed / s.total * 100)|round }}%;background:{{ color }}"></div>
+      <div class="glow"></div>
+      <div class="api-name"><div class="dot"></div>{{ api_name }}</div>
+      <div class="stat-row"><span class="k">Passés</span>   <span class="v ok">{{ s.passed }}/{{ s.total }}</span></div>
+      <div class="stat-row"><span class="k">Échoués</span>  <span class="v {% if s.failed > 0 %}bad{% endif %}">{{ s.failed }}</span></div>
+      <div class="stat-row"><span class="k">Lat. moy.</span><span class="v">{{ s.latency_avg_ms }} ms</span></div>
+      <div class="stat-row"><span class="k">p95</span>      <span class="v">{{ s.latency_p95_ms }} ms</span></div>
+      <div class="pbar-wrap">
+        <div class="pbar-bg">
+          <div class="pbar-fill" style="width:{{ (s.passed/s.total*100)|round }}%;background:{{ color }}"></div>
+        </div>
+        <div class="pbar-label">{{ (s.passed/s.total*100)|round|int }}% pass</div>
       </div>
     </div>
     {% endfor %}
   </div>
 
-  <div class="section-title">🧩 Détail des tests</div>
-  <div class="table-wrap">
+  <!-- Tests table -->
+  <div class="section-label">Détail des tests</div>
+  <div class="tbl-wrap">
     <table>
-      <thead><tr><th>API</th><th>Test</th><th>Statut</th><th>Latence</th><th>Détails</th></tr></thead>
+      <thead><tr>
+        <th>API</th><th>Test</th><th>Statut</th><th>Latence</th><th>Détails</th>
+      </tr></thead>
       <tbody>
+        {% set chip_colors = {
+          "Open-Meteo":    "rgba(110,231,247,.6)",
+          "RestCountries": "rgba(167,139,250,.6)",
+          "PokéAPI":       "rgba(251,191,36,.6)",
+          "JokeAPI":       "rgba(52,211,153,.6)",
+          "Dog CEO":       "rgba(248,113,113,.6)"
+        } %}
         {% for t in last_run.tests %}
         <tr>
-          <td><span class="api-tag">{{ t.api }}</span></td>
+          <td><span class="api-chip" style="--chip-color:{{ chip_colors.get(t.api,'rgba(255,255,255,.4)') }}">{{ t.api }}</span></td>
           <td><code>{{ t.name }}</code></td>
           <td><span class="badge {{ t.status }}">{{ t.status }}</span></td>
-          <td style="color:var(--muted)">{% if t.latency_ms %}{{ t.latency_ms }} ms{% else %}—{% endif %}</td>
-          <td style="color:var(--muted);font-size:12px">{{ t.details or '' }}</td>
+          <td class="mono" style="color:var(--muted)">{% if t.latency_ms %}{{ t.latency_ms }}ms{% else %}—{% endif %}</td>
+          <td style="color:var(--muted);font-size:11px;max-width:300px">{{ t.details or '' }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -192,28 +396,32 @@
   </div>
 
 {% else %}
-  <div class="empty">
-    <div style="font-size:52px;margin-bottom:14px">🚀</div>
-    <p>Aucun run enregistré pour l'instant.</p>
-    <a href="/run" class="btn run">▶ Lancer le premier run</a>
+  <div class="empty-state">
+    <div class="icon">⚡</div>
+    <p>Aucun run enregistré.</p>
+    <a href="/run" class="btn primary">▶ Lancer le premier run</a>
   </div>
 {% endif %}
 
+  <!-- History -->
   {% if runs %}
-  <div class="section-title">📜 Historique des runs</div>
-  <div class="table-wrap">
+  <div class="section-label">Historique</div>
+  <div class="tbl-wrap">
     <table>
-      <thead><tr><th>#</th><th>Timestamp</th><th>Passés / Total</th><th>Taux d'erreur</th><th>Lat. moy.</th><th>Disponibilité</th><th>JSON</th></tr></thead>
+      <thead><tr>
+        <th>#</th><th>Timestamp</th><th>Pass/Total</th>
+        <th>Err %</th><th>Lat moy</th><th>Dispo</th><th></th>
+      </tr></thead>
       <tbody>
         {% for run in runs %}
         <tr>
-          <td style="color:var(--muted)">{{ run.id }}</td>
-          <td style="font-size:12px">{{ run.timestamp }}</td>
-          <td><span class="{% if run.summary.failed == 0 %}ok{% else %}bad{% endif %}">{{ run.summary.passed }}</span> <span style="color:var(--muted)">/ {{ run.summary.total }}</span></td>
-          <td class="{% if run.summary.error_rate > 0.2 %}bad{% elif run.summary.error_rate > 0 %}warn{% else %}ok{% endif %}">{{ "%.0f"|format(run.summary.error_rate * 100) }}%</td>
-          <td style="color:var(--muted)">{{ run.summary.latency_ms_avg }} ms</td>
-          <td class="{% if run.summary.availability >= 0.9 %}ok{% elif run.summary.availability >= 0.6 %}warn{% else %}bad{% endif %}">{{ "%.0f"|format(run.summary.availability * 100) }}%</td>
-          <td><a href="/run/{{ run.id }}">↗</a></td>
+          <td class="mono" style="color:var(--muted)">{{ run.id }}</td>
+          <td class="mono" style="color:var(--muted);font-size:11px">{{ run.timestamp }}</td>
+          <td><span class="{% if run.summary.failed==0 %}ok{% else %}bad{% endif %} mono">{{ run.summary.passed }}</span><span style="color:var(--muted)"> / {{ run.summary.total }}</span></td>
+          <td class="mono {% if run.summary.error_rate>0.2 %}bad{% elif run.summary.error_rate>0 %}warn{% else %}ok{% endif %}">{{ "%.0f"|format(run.summary.error_rate*100) }}%</td>
+          <td class="mono" style="color:var(--muted)">{{ run.summary.latency_ms_avg }}ms</td>
+          <td class="mono {% if run.summary.availability>=0.9 %}ok{% elif run.summary.availability>=0.6 %}warn{% else %}bad{% endif %}">{{ "%.0f"|format(run.summary.availability*100) }}%</td>
+          <td><a href="/run/{{ run.id }}" style="font-size:11px;color:var(--muted)">↗</a></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -221,90 +429,128 @@
   </div>
   {% endif %}
 
-</div>
+</main>
 
 {% if runs %}
 <script>
-  const runs = {{ runs | tojson }};
-  const runsChron = [...runs].reverse();
-  const labels    = runsChron.map(r => r.timestamp.slice(5,16));
-  const latencies = runsChron.map(r => r.summary.latency_ms_avg);
-  const passed    = runsChron.map(r => r.summary.passed);
-  const failed    = runsChron.map(r => r.summary.failed + r.summary.errors);
+const runs = {{ runs | tojson }};
+const runsChron = [...runs].reverse();
+const labels = runsChron.map(r => r.timestamp.slice(5,16));
 
-  const scaleStyle = {
-    x: { ticks:{color:'#8a96c0',font:{size:11}}, grid:{color:'rgba(255,255,255,0.05)'} },
-    y: { ticks:{color:'#8a96c0',font:{size:11}}, grid:{color:'rgba(255,255,255,0.05)'} }
-  };
-  const legendStyle = { labels:{ color:'#8a96c0', font:{size:12}, boxWidth:12 } };
+const grid = { color: 'rgba(255,255,255,0.04)' };
+const tick = { color: '#5a6080', font: { family: 'DM Mono', size: 10 } };
+const leg  = { labels: { color: '#8892b0', font: { family: 'DM Mono', size: 10 }, boxWidth: 10, padding: 14 } };
 
-  // 1. Courbe latence
-  new Chart(document.getElementById('chartLatency'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Latence moy. (ms)',
-        data: latencies,
-        borderColor: '#7eb8ff',
-        backgroundColor: 'rgba(126,184,255,0.10)',
-        tension: 0.4, fill: true,
-        pointBackgroundColor: '#7eb8ff',
-        pointRadius: 4, pointHoverRadius: 7,
-      }]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:legendStyle, tooltip:{ callbacks:{ label: c => ` ${c.parsed.y} ms` } } },
-      scales: scaleStyle
+// 1. Latency line
+new Chart(document.getElementById('cLatency'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Latence moy. (ms)',
+      data: runsChron.map(r => r.summary.latency_ms_avg),
+      borderColor: '#6ee7f7', borderWidth: 2,
+      backgroundColor: 'rgba(110,231,247,0.07)',
+      tension: 0.45, fill: true,
+      pointBackgroundColor: '#6ee7f7',
+      pointBorderColor: '#05070f', pointBorderWidth: 2,
+      pointRadius: 4, pointHoverRadius: 7,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: leg, tooltip: { callbacks: { label: c => ` ${c.parsed.y} ms` } } },
+    scales: {
+      x: { ticks: tick, grid },
+      y: { ticks: tick, grid, beginAtZero: true }
     }
-  });
+  }
+});
 
-  // 2. Barres passés/échoués
-  new Chart(document.getElementById('chartPassFail'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label:'Passés',  data:passed, backgroundColor:'rgba(78,232,154,0.75)', borderColor:'rgba(78,232,154,1)',  borderWidth:1, borderRadius:5 },
-        { label:'Échoués', data:failed, backgroundColor:'rgba(255,107,138,0.75)',borderColor:'rgba(255,107,138,1)', borderWidth:1, borderRadius:5 }
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:legendStyle },
-      scales: {
-        x: { ...scaleStyle.x, stacked:true },
-        y: { ...scaleStyle.y, stacked:true }
+// 2. Donut last run
+{% if last_run %}
+const lr = {{ last_run.summary | tojson }};
+new Chart(document.getElementById('cDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Passés', 'Échoués', 'Erreurs'],
+    datasets: [{
+      data: [lr.passed, lr.failed, lr.errors],
+      backgroundColor: ['rgba(52,211,153,.8)', 'rgba(248,113,113,.8)', 'rgba(251,191,36,.8)'],
+      borderColor: '#0c0f1e', borderWidth: 3,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: leg,
+      tooltip: { callbacks: { label: c => ` ${c.label}: ${c.parsed}` } }
+    }
+  }
+});
+
+// 3. Stacked bars pass/fail
+new Chart(document.getElementById('cBars'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Passés',
+        data: runsChron.map(r => r.summary.passed),
+        backgroundColor: 'rgba(52,211,153,0.7)',
+        borderRadius: { topLeft: 4, topRight: 4 },
+        borderSkipped: false,
+      },
+      {
+        label: 'Échoués',
+        data: runsChron.map(r => r.summary.failed + r.summary.errors),
+        backgroundColor: 'rgba(248,113,113,0.7)',
+        borderRadius: { topLeft: 4, topRight: 4 },
+        borderSkipped: false,
       }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: leg },
+    scales: {
+      x: { stacked: true, ticks: tick, grid },
+      y: { stacked: true, ticks: tick, grid, beginAtZero: true }
     }
-  });
+  }
+});
 
-  // 3. Par API
-  {% if last_run %}
-  const perApi   = {{ last_run.per_api | tojson }};
-  const apiNames = Object.keys(perApi);
-  const apiPass  = apiNames.map(k => perApi[k].passed);
-  const apiFail  = apiNames.map(k => perApi[k].failed + perApi[k].errors);
-  const apiColors = ['rgba(126,184,255,0.75)','rgba(78,232,154,0.75)','rgba(255,209,102,0.75)'];
-  const apiBorders= ['rgba(126,184,255,1)',   'rgba(78,232,154,1)',   'rgba(255,209,102,1)'];
+// 4. API latency horizontal bar
+const perApi = {{ last_run.per_api | tojson }};
+const apiNames = Object.keys(perApi);
+const apiColors = ['rgba(110,231,247,.75)','rgba(167,139,250,.75)','rgba(251,191,36,.75)','rgba(52,211,153,.75)','rgba(248,113,113,.75)'];
 
-  new Chart(document.getElementById('chartPerApi'), {
-    type: 'bar',
-    data: {
-      labels: apiNames,
-      datasets: [
-        { label:'Passés',  data:apiPass, backgroundColor:apiColors, borderColor:apiBorders, borderWidth:1, borderRadius:6 },
-        { label:'Échoués', data:apiFail, backgroundColor:'rgba(255,107,138,0.65)', borderColor:'rgba(255,107,138,1)', borderWidth:1, borderRadius:6 }
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:legendStyle },
-      scales: scaleStyle
+new Chart(document.getElementById('cApiLat'), {
+  type: 'bar',
+  data: {
+    labels: apiNames,
+    datasets: [{
+      label: 'Latence moy. (ms)',
+      data: apiNames.map(k => perApi[k].latency_avg_ms),
+      backgroundColor: apiColors.slice(0, apiNames.length),
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: tick, grid, beginAtZero: true },
+      y: { ticks: { ...tick, font: { family: 'DM Mono', size: 11 } }, grid: { display: false } }
     }
-  });
-  {% endif %}
+  }
+});
+{% endif %}
 </script>
 {% endif %}
 
