@@ -4,285 +4,366 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>API Monitor</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg:       #05070f;
-      --surface:  #0c0f1e;
-      --border:   rgba(255,255,255,0.06);
-      --text:     #e8ecff;
-      --muted:    #5a6080;
-      --subtle:   #8892b0;
+      --bg:       #030712;
+      --surface:  #0d1117;
+      --card:     #111827;
+      --border:   rgba(255,255,255,0.07);
+      --text:     #f1f5f9;
+      --muted:    #64748b;
+      --subtle:   #94a3b8;
 
-      --c1: #6ee7f7;   /* cyan    — Open-Meteo  */
-      --c2: #a78bfa;   /* violet  — RestCountries */
-      --c3: #fbbf24;   /* amber   — PokéAPI     */
-      --c4: #34d399;   /* emerald — JokeAPI     */
-      --c5: #f87171;   /* rose    — Dog CEO     */
+      --neon-blue:   #00d4ff;
+      --neon-purple: #bf00ff;
+      --neon-green:  #00ff88;
+      --neon-pink:   #ff006e;
+      --neon-amber:  #ffb300;
 
-      --ok:   #34d399;
-      --warn: #fbbf24;
-      --bad:  #f87171;
+      /* par API */
+      --c1: #00d4ff;
+      --c2: #bf00ff;
+      --c3: #ffb300;
+      --c4: #00ff88;
+      --c5: #ff006e;
+
+      --ok:   #00ff88;
+      --warn: #ffb300;
+      --bad:  #ff006e;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: 'Syne', sans-serif;
+      font-family: 'Space Grotesk', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
     }
 
-    /* ── NOISE + GRID TEXTURE ── */
+    /* Grille de fond cyberpunk */
     body::before {
       content: '';
       position: fixed; inset: 0; z-index: 0; pointer-events: none;
       background-image:
-        radial-gradient(ellipse 80vw 60vh at 10% -10%, rgba(110,231,247,.06) 0%, transparent 60%),
-        radial-gradient(ellipse 60vw 50vh at 90% 110%, rgba(167,139,250,.05) 0%, transparent 60%);
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
     }
 
-    /* ── HEADER ── */
+    /* Halos néon de fond */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 700px 400px at 15% 0%,   rgba(0,212,255,0.07)  0%, transparent 60%),
+        radial-gradient(ellipse 500px 400px at 85% 100%, rgba(191,0,255,0.06)  0%, transparent 60%),
+        radial-gradient(ellipse 400px 300px at 50% 50%,  rgba(0,255,136,0.03)  0%, transparent 60%);
+    }
+
+    /* ───── HEADER ───── */
     header {
-      position: relative; z-index: 10;
-      max-width: 1280px; margin: 0 auto;
-      padding: 36px 32px 0;
-      display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;
+      position: relative; z-index: 20;
+      max-width: 1300px; margin: 0 auto;
+      padding: 40px 36px 24px;
+      display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .logo-block .eyebrow {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px; color: var(--c1); letter-spacing: .18em;
-      text-transform: uppercase; margin-bottom: 8px;
+    .brand { display: flex; align-items: center; gap: 16px; }
+    .brand-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(191,0,255,0.2));
+      border: 1px solid rgba(0,212,255,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 0 20px rgba(0,212,255,0.15);
     }
-    .logo-block h1 {
-      font-size: clamp(26px, 3.5vw, 40px);
-      font-weight: 800; letter-spacing: -.02em; line-height: 1;
+    .brand-text .title {
+      font-size: 22px; font-weight: 700; letter-spacing: -0.03em;
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .logo-block h1 span { color: var(--muted); }
-    .apis-pill {
-      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px;
-    }
-    .apis-pill span {
-      font-family: 'DM Mono', monospace;
-      font-size: 10px; padding: 3px 10px; border-radius: 999px;
-      border: 1px solid; letter-spacing: .06em;
+    .brand-text .subtitle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--muted); margin-top: 3px;
     }
 
-    .nav-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; padding-top: 4px; }
+    .api-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .api-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; padding: 4px 10px; border-radius: 6px;
+      letter-spacing: 0.05em; font-weight: 500;
+      border: 1px solid; transition: opacity .2s;
+    }
+
+    .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+    .nav { display: flex; gap: 8px; }
     .btn {
-      font-family: 'Syne', sans-serif;
-      font-size: 12px; font-weight: 700; letter-spacing: .04em;
-      padding: 10px 18px; border-radius: 10px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px; font-weight: 600;
+      padding: 9px 18px; border-radius: 10px;
       border: 1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      color: var(--subtle); cursor: pointer; text-decoration: none;
-      transition: all .2s;
+      background: rgba(255,255,255,0.04);
+      color: var(--subtle); cursor: pointer;
+      text-decoration: none; transition: all .2s;
     }
-    .btn:hover { background: rgba(255,255,255,.08); color: var(--text); border-color: rgba(255,255,255,.12); }
-    .btn.primary {
-      background: linear-gradient(135deg, var(--c1) 0%, var(--c2) 100%);
-      color: #05070f; border-color: transparent;
+    .btn:hover { background: rgba(255,255,255,0.08); color: var(--text); border-color: rgba(255,255,255,0.15); text-decoration: none; }
+    .btn-run {
+      background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,255,136,0.15));
+      border-color: rgba(0,212,255,0.4);
+      color: var(--neon-blue);
+      box-shadow: 0 0 16px rgba(0,212,255,0.12);
     }
-    .btn.primary:hover { filter: brightness(1.1); }
+    .btn-run:hover {
+      background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(0,255,136,0.25));
+      box-shadow: 0 0 24px rgba(0,212,255,0.2);
+      color: var(--neon-blue);
+    }
 
-    /* ── MAIN ── */
+    /* ───── LAYOUT ───── */
     main {
       position: relative; z-index: 10;
-      max-width: 1280px; margin: 0 auto; padding: 32px 32px 64px;
+      max-width: 1300px; margin: 0 auto;
+      padding: 32px 36px 72px;
     }
 
-    /* ── SECTION LABEL ── */
-    .section-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 10px; color: var(--muted); letter-spacing: .16em;
-      text-transform: uppercase; margin: 40px 0 16px;
+    .section-head {
       display: flex; align-items: center; gap: 12px;
+      margin: 36px 0 18px;
     }
-    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .section-head .label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--neon-blue);
+      letter-spacing: 0.15em; text-transform: uppercase;
+    }
+    .section-head .line { flex: 1; height: 1px; background: var(--border); }
+    .section-head .ts {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--muted);
+    }
 
-    /* ── KPI STRIP ── */
-    .kpi-strip {
+    /* ───── KPIs ───── */
+    .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
     }
+    @media (max-width: 900px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 500px) { .kpi-grid { grid-template-columns: 1fr; } }
+
     .kpi {
-      background: var(--surface);
+      background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 20px 22px;
+      padding: 22px 24px;
       position: relative; overflow: hidden;
-      transition: border-color .2s;
+      transition: transform .2s, box-shadow .2s;
     }
-    .kpi:hover { border-color: rgba(255,255,255,.12); }
-    .kpi .accent-line {
-      position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--kpi-color, var(--c1)), transparent);
+    .kpi:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(0,0,0,0.3);
     }
-    .kpi .lbl {
-      font-family: 'DM Mono', monospace;
-      font-size: 10px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase;
+    .kpi-glow {
+      position: absolute; bottom: -20px; right: -20px;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: var(--glow-color, var(--neon-blue));
+      opacity: 0.08; filter: blur(20px);
     }
-    .kpi .val {
-      font-size: 42px; font-weight: 800; letter-spacing: -.03em;
-      line-height: 1; margin: 8px 0 6px;
-      color: var(--kpi-color, var(--text));
+    .kpi-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.1em;
+      margin-bottom: 10px;
     }
-    .kpi .val small { font-size: 18px; font-weight: 400; opacity: .6; }
-    .kpi .hint { font-size: 12px; color: var(--muted); }
+    .kpi-value {
+      font-size: 44px; font-weight: 700; letter-spacing: -0.04em;
+      line-height: 1; color: var(--val-color, var(--text));
+      text-shadow: 0 0 20px var(--val-color, transparent);
+    }
+    .kpi-value span { font-size: 20px; font-weight: 400; opacity: 0.6; }
+    .kpi-hint {
+      font-size: 12px; color: var(--muted); margin-top: 8px;
+    }
+    .kpi-bar {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--bar-color, var(--neon-blue)), transparent);
+    }
 
-    /* ── CHARTS ROW ── */
-    .charts-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 12px;
+    /* ───── CHARTS ───── */
+    .chart-grid-main {
+      display: grid; grid-template-columns: 3fr 2fr; gap: 14px;
     }
-    @media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
-
-    .charts-row-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+    .chart-grid-sub {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      margin-top: 14px;
     }
-    @media (max-width: 900px) { .charts-row-2 { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) {
+      .chart-grid-main, .chart-grid-sub { grid-template-columns: 1fr; }
+    }
 
-    .chart-card {
-      background: var(--surface);
+    .chart-box {
+      background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 22px 24px;
     }
-    .chart-card .ch-title {
-      font-size: 13px; font-weight: 700; color: var(--subtle);
-      margin-bottom: 18px; letter-spacing: -.01em;
+    .chart-title {
+      font-size: 13px; font-weight: 600; color: var(--subtle);
+      margin-bottom: 20px;
     }
-    .chart-card .ch-title em {
-      font-style: normal; color: var(--text);
-    }
+    .chart-title strong { color: var(--text); }
 
-    /* ── API GRID ── */
-    .api-grid {
+    /* ───── API CARDS ───── */
+    .api-cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(5, 1fr);
       gap: 12px;
     }
+    @media (max-width: 1100px) { .api-cards-grid { grid-template-columns: repeat(3,1fr); } }
+    @media (max-width: 700px)  { .api-cards-grid { grid-template-columns: 1fr 1fr; } }
+
     .api-card {
-      background: var(--surface);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 18px 20px;
+      border-radius: 14px;
+      padding: 18px;
       position: relative; overflow: hidden;
       transition: transform .2s, border-color .2s;
     }
-    .api-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.1); }
-    .api-card .glow {
-      position: absolute; top: -40px; right: -40px;
-      width: 120px; height: 120px; border-radius: 50%;
-      background: var(--api-color, var(--c1));
-      opacity: .06; filter: blur(30px);
+    .api-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--ac, var(--neon-blue));
     }
-    .api-card .api-name {
-      font-size: 14px; font-weight: 700; margin-bottom: 14px;
-      display: flex; align-items: center; gap: 8px;
+    .api-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--ac, var(--neon-blue)), transparent);
     }
-    .api-card .api-name .dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--api-color, var(--c1));
-      flex-shrink: 0;
+    .api-card .ac-glow {
+      position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+      width: 100px; height: 60px; border-radius: 50%;
+      background: var(--ac, var(--neon-blue));
+      opacity: 0.08; filter: blur(20px);
     }
-    .api-card .stat-row {
+    .api-card .ac-name {
+      font-size: 13px; font-weight: 700; margin-bottom: 14px;
+      color: var(--ac, var(--neon-blue));
+    }
+    .api-row {
       display: flex; justify-content: space-between;
-      font-size: 12px; padding: 5px 0;
+      font-size: 12px; padding: 4px 0;
       border-bottom: 1px solid var(--border);
     }
-    .api-card .stat-row:last-of-type { border-bottom: none; }
-    .api-card .stat-row .k { color: var(--muted); }
-    .api-card .stat-row .v { font-family: 'DM Mono', monospace; font-size: 11px; }
-    .api-card .pbar-wrap { margin-top: 12px; }
-    .api-card .pbar-bg { height: 3px; background: rgba(255,255,255,.06); border-radius: 2px; overflow: hidden; }
-    .api-card .pbar-fill { height: 100%; border-radius: 2px; transition: width .6s cubic-bezier(.4,0,.2,1); }
-    .api-card .pbar-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 5px; text-align: right; }
+    .api-row:last-of-type { border: none; }
+    .api-row .rk { color: var(--muted); }
+    .api-row .rv { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+    .pbar { height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+    .pbar-inner { height: 100%; border-radius: 2px; background: var(--ac, var(--neon-blue)); box-shadow: 0 0 6px var(--ac, var(--neon-blue)); }
 
-    /* ── TESTS TABLE ── */
-    .tbl-wrap { overflow: auto; border-radius: 16px; border: 1px solid var(--border); }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    /* ───── TABLE ───── */
+    .tbl-wrap {
+      overflow: auto; border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
     thead th {
-      background: rgba(255,255,255,.025);
-      padding: 10px 16px; text-align: left;
-      font-family: 'DM Mono', monospace;
+      background: rgba(0,212,255,0.04);
+      padding: 12px 16px; text-align: left;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 10px; color: var(--muted);
-      letter-spacing: .1em; text-transform: uppercase;
+      letter-spacing: 0.1em; text-transform: uppercase;
       white-space: nowrap;
     }
-    tbody td { padding: 10px 16px; border-top: 1px solid var(--border); vertical-align: middle; }
-    tbody tr:hover td { background: rgba(255,255,255,.015); }
+    tbody td { padding: 11px 16px; border-top: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:hover td { background: rgba(0,212,255,0.02); }
 
     .badge {
-      font-family: 'DM Mono', monospace;
-      font-size: 10px; font-weight: 500; letter-spacing: .06em;
-      padding: 3px 9px; border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; font-weight: 500;
+      padding: 3px 10px; border-radius: 6px; letter-spacing: 0.05em;
     }
-    .badge.PASS  { background: rgba(52,211,153,.12); color: var(--ok);   border: 1px solid rgba(52,211,153,.25); }
-    .badge.FAIL  { background: rgba(248,113,113,.12); color: var(--bad);  border: 1px solid rgba(248,113,113,.25); }
-    .badge.ERROR { background: rgba(251,191,36,.12);  color: var(--warn); border: 1px solid rgba(251,191,36,.25); }
+    .badge.PASS  { background: rgba(0,255,136,0.1);  color: var(--ok);   border: 1px solid rgba(0,255,136,0.25); text-shadow: 0 0 8px rgba(0,255,136,0.5); }
+    .badge.FAIL  { background: rgba(255,0,110,0.1);  color: var(--bad);  border: 1px solid rgba(255,0,110,0.25); text-shadow: 0 0 8px rgba(255,0,110,0.5); }
+    .badge.ERROR { background: rgba(255,179,0,0.1);  color: var(--warn); border: 1px solid rgba(255,179,0,0.25); text-shadow: 0 0 8px rgba(255,179,0,0.5); }
 
-    .api-chip {
-      font-family: 'DM Mono', monospace;
+    .chip {
+      font-family: 'JetBrains Mono', monospace;
       font-size: 10px; padding: 2px 8px; border-radius: 5px;
-      border: 1px solid var(--chip-color, rgba(255,255,255,.1));
-      color: var(--chip-color, var(--subtle));
-      background: rgba(255,255,255,.03);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--chip-c, rgba(255,255,255,0.1));
+      color: var(--chip-c, var(--muted));
     }
+
     code {
-      font-family: 'DM Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px; color: var(--subtle);
-      background: rgba(255,255,255,.04); padding: 2px 6px; border-radius: 5px;
+      background: rgba(255,255,255,0.04);
+      padding: 2px 7px; border-radius: 5px;
     }
 
-    /* ── HISTORY ── */
-    .ok   { color: var(--ok); }
+    .ok   { color: var(--ok);   }
     .warn { color: var(--warn); }
-    .bad  { color: var(--bad); }
-    .mono { font-family: 'DM Mono', monospace; }
+    .bad  { color: var(--bad);  }
+    .mono { font-family: 'JetBrains Mono', monospace; }
 
-    /* ── EMPTY ── */
-    .empty-state {
+    /* ───── EMPTY ───── */
+    .empty {
       text-align: center; padding: 80px 20px;
-      background: var(--surface); border: 1px solid var(--border);
+      background: var(--card); border: 1px solid var(--border);
       border-radius: 20px;
     }
-    .empty-state .icon { font-size: 56px; margin-bottom: 16px; }
-    .empty-state p { color: var(--muted); font-size: 15px; margin-bottom: 20px; }
+    .empty p { color: var(--muted); font-size: 15px; margin: 16px 0 24px; }
 
-    /* ── SCROLLBAR ── */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+    /* Animations d'entrée */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .kpi         { animation: fadeUp .4s ease both; }
+    .kpi:nth-child(1) { animation-delay: .05s; }
+    .kpi:nth-child(2) { animation-delay: .10s; }
+    .kpi:nth-child(3) { animation-delay: .15s; }
+    .kpi:nth-child(4) { animation-delay: .20s; }
+    .chart-box   { animation: fadeUp .4s .2s ease both; }
+    .api-card    { animation: fadeUp .4s .3s ease both; }
   </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <header>
-  <div class="logo-block">
-    <div class="eyebrow">// API Monitor Dashboard</div>
-    <h1>Test <span>&</span> QoS</h1>
-    <div class="apis-pill">
-      <span style="color:var(--c1);border-color:rgba(110,231,247,.25);background:rgba(110,231,247,.06)">Open-Meteo</span>
-      <span style="color:var(--c2);border-color:rgba(167,139,250,.25);background:rgba(167,139,250,.06)">RestCountries</span>
-      <span style="color:var(--c3);border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.06)">PokéAPI</span>
-      <span style="color:var(--c4);border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.06)">JokeAPI</span>
-      <span style="color:var(--c5);border-color:rgba(248,113,113,.25);background:rgba(248,113,113,.06)">Dog CEO</span>
+  <div>
+    <div class="brand">
+      <div class="brand-icon">🧪</div>
+      <div class="brand-text">
+        <div class="title">API Monitor</div>
+        <div class="subtitle">// Testing as Code — QoS Dashboard</div>
+      </div>
+    </div>
+    <div class="api-tags" style="margin-top:14px">
+      <span class="api-tag" style="color:var(--c1);border-color:rgba(0,212,255,.3);background:rgba(0,212,255,.07)">Open-Meteo</span>
+      <span class="api-tag" style="color:var(--c2);border-color:rgba(191,0,255,.3);background:rgba(191,0,255,.07)">RestCountries</span>
+      <span class="api-tag" style="color:var(--c3);border-color:rgba(255,179,0,.3);background:rgba(255,179,0,.07)">PokéAPI</span>
+      <span class="api-tag" style="color:var(--c4);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.07)">JokeAPI</span>
+      <span class="api-tag" style="color:var(--c5);border-color:rgba(255,0,110,.3);background:rgba(255,0,110,.07)">Dog CEO</span>
     </div>
   </div>
-  <div class="nav-actions">
-    <a href="/health" class="btn">🏥 Health</a>
-    <a href="/export" class="btn">⬇ Export</a>
-    <a href="/run"    class="btn primary">▶ Run Now</a>
+  <div class="header-right">
+    <div class="nav">
+      <a href="/health" class="btn">🏥 Santé</a>
+      <a href="/export" class="btn">⬇ Export</a>
+      <a href="/run"    class="btn btn-run">▶ Lancer un run</a>
+    </div>
   </div>
 </header>
 
@@ -290,105 +371,126 @@
 
 {% if last_run %}
 
-  <!-- KPIs -->
-  <div class="section-label">Snapshot — {{ last_run.timestamp }}</div>
-  <div class="kpi-strip">
-    <div class="kpi" style="--kpi-color:var(--ok)">
-      <div class="accent-line"></div>
-      <div class="lbl">Tests passés</div>
-      <div class="val">{{ last_run.summary.passed }}<small>/{{ last_run.summary.total }}</small></div>
-      <div class="hint">{{ "%.0f"|format(last_run.summary.availability * 100) }}% disponibilité</div>
+  <!-- ── KPIs ── -->
+  <div class="section-head">
+    <span class="label">Dernier run</span>
+    <span class="ts">{{ last_run.timestamp }}</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi" style="--glow-color:var(--ok); --val-color:var(--ok); --bar-color:var(--ok)">
+      <div class="kpi-glow"></div>
+      <div class="kpi-bar"></div>
+      <div class="kpi-label">Tests passés</div>
+      <div class="kpi-value">{{ last_run.summary.passed }}<span> / {{ last_run.summary.total }}</span></div>
+      <div class="kpi-hint">Disponibilité : {{ "%.0f"|format(last_run.summary.availability * 100) }}%</div>
     </div>
-    <div class="kpi" style="--kpi-color:{% if last_run.summary.failed > 0 %}var(--bad){% else %}var(--ok){% endif %}">
-      <div class="accent-line"></div>
-      <div class="lbl">Échecs</div>
-      <div class="val">{{ last_run.summary.failed }}</div>
-      <div class="hint">Erreurs réseau : {{ last_run.summary.errors }}</div>
+
+    <div class="kpi" style="--glow-color:{% if last_run.summary.failed > 0 %}var(--bad){% else %}var(--ok){% endif %}; --val-color:{% if last_run.summary.failed > 0 %}var(--bad){% else %}var(--ok){% endif %}; --bar-color:{% if last_run.summary.failed > 0 %}var(--bad){% else %}var(--ok){% endif %}">
+      <div class="kpi-glow"></div>
+      <div class="kpi-bar"></div>
+      <div class="kpi-label">Tests échoués</div>
+      <div class="kpi-value">{{ last_run.summary.failed }}</div>
+      <div class="kpi-hint">Erreurs réseau : {{ last_run.summary.errors }}</div>
     </div>
-    <div class="kpi" style="--kpi-color:{% if last_run.summary.error_rate > 0.2 %}var(--bad){% elif last_run.summary.error_rate > 0 %}var(--warn){% else %}var(--ok){% endif %}">
-      <div class="accent-line"></div>
-      <div class="lbl">Taux d'erreur</div>
-      <div class="val">{{ "%.0f"|format(last_run.summary.error_rate * 100) }}<small>%</small></div>
-      <div class="hint">Dernier run</div>
+
+    <div class="kpi" style="--glow-color:{% if last_run.summary.error_rate > 0.2 %}var(--bad){% elif last_run.summary.error_rate > 0 %}var(--warn){% else %}var(--ok){% endif %}; --val-color:{% if last_run.summary.error_rate > 0.2 %}var(--bad){% elif last_run.summary.error_rate > 0 %}var(--warn){% else %}var(--ok){% endif %}; --bar-color:{% if last_run.summary.error_rate > 0.2 %}var(--bad){% elif last_run.summary.error_rate > 0 %}var(--warn){% else %}var(--ok){% endif %}">
+      <div class="kpi-glow"></div>
+      <div class="kpi-bar"></div>
+      <div class="kpi-label">Taux d'erreur</div>
+      <div class="kpi-value">{{ "%.0f"|format(last_run.summary.error_rate * 100) }}<span>%</span></div>
+      <div class="kpi-hint">Dernier run uniquement</div>
     </div>
-    <div class="kpi" style="--kpi-color:var(--c1)">
-      <div class="accent-line"></div>
-      <div class="lbl">Latence moy.</div>
-      <div class="val">{{ last_run.summary.latency_ms_avg }}<small>ms</small></div>
-      <div class="hint">p95 : {{ last_run.summary.latency_ms_p95 }} ms</div>
+
+    <div class="kpi" style="--glow-color:var(--c1); --val-color:var(--c1); --bar-color:var(--c1)">
+      <div class="kpi-glow"></div>
+      <div class="kpi-bar"></div>
+      <div class="kpi-label">Latence moyenne</div>
+      <div class="kpi-value">{{ last_run.summary.latency_ms_avg }}<span>ms</span></div>
+      <div class="kpi-hint">p95 : {{ last_run.summary.latency_ms_p95 }} ms</div>
     </div>
   </div>
 
-  <!-- Charts row 1 -->
-  <div class="section-label">Tendances</div>
-  <div class="charts-row">
-    <div class="chart-card">
-      <div class="ch-title"><em>Latence</em> moyenne par run</div>
-      <div style="position:relative;height:200px"><canvas id="cLatency"></canvas></div>
+  <!-- ── GRAPHIQUES ── -->
+  <div class="section-head">
+    <span class="label">Visualisations</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="chart-grid-main">
+    <div class="chart-box">
+      <div class="chart-title">Évolution de la <strong>latence</strong> sur les derniers runs</div>
+      <div style="position:relative;height:210px"><canvas id="cLatency"></canvas></div>
     </div>
-    <div class="chart-card">
-      <div class="ch-title"><em>Pass / Fail</em> — dernier run</div>
-      <div style="position:relative;height:200px"><canvas id="cDonut"></canvas></div>
+    <div class="chart-box">
+      <div class="chart-title">Répartition <strong>Pass / Fail</strong> — dernier run</div>
+      <div style="position:relative;height:210px"><canvas id="cDonut"></canvas></div>
     </div>
   </div>
 
-  <!-- Charts row 2 -->
-  <div class="charts-row-2" style="margin-top:12px">
-    <div class="chart-card">
-      <div class="ch-title"><em>Passés / Échoués</em> par run</div>
+  <div class="chart-grid-sub">
+    <div class="chart-box">
+      <div class="chart-title">Évolution <strong>passés / échoués</strong> par run</div>
       <div style="position:relative;height:180px"><canvas id="cBars"></canvas></div>
     </div>
-    <div class="chart-card">
-      <div class="ch-title"><em>Latence moy.</em> par API</div>
-      <div style="position:relative;height:180px"><canvas id="cApiLat"></canvas></div>
+    <div class="chart-box">
+      <div class="chart-title">Latence moyenne <strong>par API</strong></div>
+      <div style="position:relative;height:180px"><canvas id="cApiBar"></canvas></div>
     </div>
   </div>
 
-  <!-- Per-API cards -->
-  <div class="section-label">Par API</div>
-  <div class="api-grid">
-    {% set api_colors = ["var(--c1)","var(--c2)","var(--c3)","var(--c4)","var(--c5)"] %}
+  <!-- ── PAR API ── -->
+  <div class="section-head">
+    <span class="label">Résultats par API</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="api-cards-grid">
+    {% set acs   = ["var(--c1)","var(--c2)","var(--c3)","var(--c4)","var(--c5)"] %}
     {% for api_name, s in last_run.per_api.items() %}
-    {% set color = api_colors[loop.index0 % 5] %}
-    <div class="api-card" style="--api-color:{{ color }}">
-      <div class="glow"></div>
-      <div class="api-name"><div class="dot"></div>{{ api_name }}</div>
-      <div class="stat-row"><span class="k">Passés</span>   <span class="v ok">{{ s.passed }}/{{ s.total }}</span></div>
-      <div class="stat-row"><span class="k">Échoués</span>  <span class="v {% if s.failed > 0 %}bad{% endif %}">{{ s.failed }}</span></div>
-      <div class="stat-row"><span class="k">Lat. moy.</span><span class="v">{{ s.latency_avg_ms }} ms</span></div>
-      <div class="stat-row"><span class="k">p95</span>      <span class="v">{{ s.latency_p95_ms }} ms</span></div>
-      <div class="pbar-wrap">
-        <div class="pbar-bg">
-          <div class="pbar-fill" style="width:{{ (s.passed/s.total*100)|round }}%;background:{{ color }}"></div>
-        </div>
-        <div class="pbar-label">{{ (s.passed/s.total*100)|round|int }}% pass</div>
+    {% set ac = acs[loop.index0 % 5] %}
+    <div class="api-card" style="--ac:{{ ac }}">
+      <div class="ac-glow"></div>
+      <div class="ac-name">{{ api_name }}</div>
+      <div class="api-row"><span class="rk">Tests passés</span>  <span class="rv ok">{{ s.passed }} / {{ s.total }}</span></div>
+      <div class="api-row"><span class="rk">Échecs</span>        <span class="rv {% if s.failed > 0 %}bad{% endif %}">{{ s.failed }}</span></div>
+      <div class="api-row"><span class="rk">Lat. moyenne</span>  <span class="rv">{{ s.latency_avg_ms }} ms</span></div>
+      <div class="api-row"><span class="rk">Latence p95</span>   <span class="rv">{{ s.latency_p95_ms }} ms</span></div>
+      <div class="pbar">
+        <div class="pbar-inner" style="width:{{ (s.passed/s.total*100)|round|int }}%"></div>
       </div>
     </div>
     {% endfor %}
   </div>
 
-  <!-- Tests table -->
-  <div class="section-label">Détail des tests</div>
+  <!-- ── DÉTAIL DES TESTS ── -->
+  <div class="section-head">
+    <span class="label">Détail des tests</span>
+    <div class="line"></div>
+  </div>
+
   <div class="tbl-wrap">
     <table>
-      <thead><tr>
-        <th>API</th><th>Test</th><th>Statut</th><th>Latence</th><th>Détails</th>
-      </tr></thead>
+      <thead>
+        <tr><th>API</th><th>Nom du test</th><th>Statut</th><th>Latence</th><th>Résultat</th></tr>
+      </thead>
       <tbody>
-        {% set chip_colors = {
-          "Open-Meteo":    "rgba(110,231,247,.6)",
-          "RestCountries": "rgba(167,139,250,.6)",
-          "PokéAPI":       "rgba(251,191,36,.6)",
-          "JokeAPI":       "rgba(52,211,153,.6)",
-          "Dog CEO":       "rgba(248,113,113,.6)"
+        {% set chip_map = {
+          "Open-Meteo":    ("var(--c1)", "rgba(0,212,255,.25)"),
+          "RestCountries": ("var(--c2)", "rgba(191,0,255,.25)"),
+          "PokéAPI":       ("var(--c3)", "rgba(255,179,0,.25)"),
+          "JokeAPI":       ("var(--c4)", "rgba(0,255,136,.25)"),
+          "Dog CEO":       ("var(--c5)", "rgba(255,0,110,.25)")
         } %}
         {% for t in last_run.tests %}
+        {% set cm = chip_map.get(t.api, ("var(--muted)", "rgba(255,255,255,.1)")) %}
         <tr>
-          <td><span class="api-chip" style="--chip-color:{{ chip_colors.get(t.api,'rgba(255,255,255,.4)') }}">{{ t.api }}</span></td>
+          <td><span class="chip" style="--chip-c:{{ cm[0] }};border-color:{{ cm[1] }}">{{ t.api }}</span></td>
           <td><code>{{ t.name }}</code></td>
           <td><span class="badge {{ t.status }}">{{ t.status }}</span></td>
-          <td class="mono" style="color:var(--muted)">{% if t.latency_ms %}{{ t.latency_ms }}ms{% else %}—{% endif %}</td>
-          <td style="color:var(--muted);font-size:11px;max-width:300px">{{ t.details or '' }}</td>
+          <td class="mono" style="color:var(--muted)">{% if t.latency_ms %}{{ t.latency_ms }} ms{% else %}—{% endif %}</td>
+          <td style="color:var(--subtle);font-size:12px;max-width:260px">{{ t.details or '—' }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -396,32 +498,41 @@
   </div>
 
 {% else %}
-  <div class="empty-state">
-    <div class="icon">⚡</div>
-    <p>Aucun run enregistré.</p>
-    <a href="/run" class="btn primary">▶ Lancer le premier run</a>
+  <div class="empty" style="margin-top:32px">
+    <div style="font-size:56px">⚡</div>
+    <p>Aucun run enregistré pour le moment.</p>
+    <a href="/run" class="btn btn-run">▶ Lancer le premier run</a>
   </div>
 {% endif %}
 
-  <!-- History -->
+  <!-- ── HISTORIQUE ── -->
   {% if runs %}
-  <div class="section-label">Historique</div>
+  <div class="section-head" style="margin-top:40px">
+    <span class="label">Historique des runs</span>
+    <div class="line"></div>
+  </div>
   <div class="tbl-wrap">
     <table>
-      <thead><tr>
-        <th>#</th><th>Timestamp</th><th>Pass/Total</th>
-        <th>Err %</th><th>Lat moy</th><th>Dispo</th><th></th>
-      </tr></thead>
+      <thead>
+        <tr><th>#</th><th>Horodatage</th><th>Pass / Total</th><th>Taux d'erreur</th><th>Latence moy.</th><th>Disponibilité</th><th>JSON</th></tr>
+      </thead>
       <tbody>
         {% for run in runs %}
         <tr>
           <td class="mono" style="color:var(--muted)">{{ run.id }}</td>
           <td class="mono" style="color:var(--muted);font-size:11px">{{ run.timestamp }}</td>
-          <td><span class="{% if run.summary.failed==0 %}ok{% else %}bad{% endif %} mono">{{ run.summary.passed }}</span><span style="color:var(--muted)"> / {{ run.summary.total }}</span></td>
-          <td class="mono {% if run.summary.error_rate>0.2 %}bad{% elif run.summary.error_rate>0 %}warn{% else %}ok{% endif %}">{{ "%.0f"|format(run.summary.error_rate*100) }}%</td>
-          <td class="mono" style="color:var(--muted)">{{ run.summary.latency_ms_avg }}ms</td>
-          <td class="mono {% if run.summary.availability>=0.9 %}ok{% elif run.summary.availability>=0.6 %}warn{% else %}bad{% endif %}">{{ "%.0f"|format(run.summary.availability*100) }}%</td>
-          <td><a href="/run/{{ run.id }}" style="font-size:11px;color:var(--muted)">↗</a></td>
+          <td>
+            <span class="{% if run.summary.failed == 0 %}ok{% else %}bad{% endif %} mono">{{ run.summary.passed }}</span>
+            <span style="color:var(--muted)"> / {{ run.summary.total }}</span>
+          </td>
+          <td class="mono {% if run.summary.error_rate > 0.2 %}bad{% elif run.summary.error_rate > 0 %}warn{% else %}ok{% endif %}">
+            {{ "%.0f"|format(run.summary.error_rate * 100) }}%
+          </td>
+          <td class="mono" style="color:var(--muted)">{{ run.summary.latency_ms_avg }} ms</td>
+          <td class="mono {% if run.summary.availability >= 0.9 %}ok{% elif run.summary.availability >= 0.6 %}warn{% else %}bad{% endif %}">
+            {{ "%.0f"|format(run.summary.availability * 100) }}%
+          </td>
+          <td><a href="/run/{{ run.id }}" style="color:var(--muted);font-size:12px">↗ voir</a></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -434,64 +545,76 @@
 {% if runs %}
 <script>
 const runs = {{ runs | tojson }};
-const runsChron = [...runs].reverse();
-const labels = runsChron.map(r => r.timestamp.slice(5,16));
+const chronos = [...runs].reverse();
+const labels = chronos.map(r => r.timestamp.slice(5, 16));
 
-const grid = { color: 'rgba(255,255,255,0.04)' };
-const tick = { color: '#5a6080', font: { family: 'DM Mono', size: 10 } };
-const leg  = { labels: { color: '#8892b0', font: { family: 'DM Mono', size: 10 }, boxWidth: 10, padding: 14 } };
+Chart.defaults.font.family = 'JetBrains Mono';
 
-// 1. Latency line
+const gridColor = 'rgba(255,255,255,0.04)';
+const tickStyle = { color: '#64748b', font: { size: 10 } };
+const legendStyle = {
+  labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 10, padding: 16 }
+};
+
+/* 1 — Courbe latence */
 new Chart(document.getElementById('cLatency'), {
   type: 'line',
   data: {
     labels,
     datasets: [{
-      label: 'Latence moy. (ms)',
-      data: runsChron.map(r => r.summary.latency_ms_avg),
-      borderColor: '#6ee7f7', borderWidth: 2,
-      backgroundColor: 'rgba(110,231,247,0.07)',
-      tension: 0.45, fill: true,
-      pointBackgroundColor: '#6ee7f7',
-      pointBorderColor: '#05070f', pointBorderWidth: 2,
-      pointRadius: 4, pointHoverRadius: 7,
+      label: 'Latence (ms)',
+      data: chronos.map(r => r.summary.latency_ms_avg),
+      borderColor: '#00d4ff',
+      borderWidth: 2,
+      backgroundColor: ctx => {
+        const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
+        g.addColorStop(0, 'rgba(0,212,255,0.18)');
+        g.addColorStop(1, 'rgba(0,212,255,0.00)');
+        return g;
+      },
+      tension: 0.4, fill: true,
+      pointBackgroundColor: '#00d4ff',
+      pointBorderColor: '#030712',
+      pointBorderWidth: 2,
+      pointRadius: 5, pointHoverRadius: 8,
     }]
   },
   options: {
     responsive: true, maintainAspectRatio: false,
-    plugins: { legend: leg, tooltip: { callbacks: { label: c => ` ${c.parsed.y} ms` } } },
+    plugins: { legend: legendStyle, tooltip: { callbacks: { label: c => `  ${c.parsed.y} ms` } } },
     scales: {
-      x: { ticks: tick, grid },
-      y: { ticks: tick, grid, beginAtZero: true }
+      x: { ticks: tickStyle, grid: { color: gridColor } },
+      y: { ticks: tickStyle, grid: { color: gridColor }, beginAtZero: true }
     }
   }
 });
 
-// 2. Donut last run
+/* 2 — Donut */
 {% if last_run %}
 const lr = {{ last_run.summary | tojson }};
 new Chart(document.getElementById('cDonut'), {
   type: 'doughnut',
   data: {
-    labels: ['Passés', 'Échoués', 'Erreurs'],
+    labels: ['Passés', 'Échoués', 'Erreurs réseau'],
     datasets: [{
       data: [lr.passed, lr.failed, lr.errors],
-      backgroundColor: ['rgba(52,211,153,.8)', 'rgba(248,113,113,.8)', 'rgba(251,191,36,.8)'],
-      borderColor: '#0c0f1e', borderWidth: 3,
-      hoverOffset: 6,
+      backgroundColor: ['rgba(0,255,136,0.75)', 'rgba(255,0,110,0.75)', 'rgba(255,179,0,0.75)'],
+      borderColor: '#111827',
+      borderWidth: 3,
+      hoverOffset: 8,
     }]
   },
   options: {
     responsive: true, maintainAspectRatio: false,
-    cutout: '68%',
+    cutout: '70%',
     plugins: {
-      legend: leg,
-      tooltip: { callbacks: { label: c => ` ${c.label}: ${c.parsed}` } }
+      legend: legendStyle,
+      tooltip: { callbacks: { label: c => `  ${c.label} : ${c.parsed}` } }
     }
   }
 });
 
-// 3. Stacked bars pass/fail
+/* 3 — Barres empilées */
 new Chart(document.getElementById('cBars'), {
   type: 'bar',
   data: {
@@ -499,45 +622,42 @@ new Chart(document.getElementById('cBars'), {
     datasets: [
       {
         label: 'Passés',
-        data: runsChron.map(r => r.summary.passed),
-        backgroundColor: 'rgba(52,211,153,0.7)',
-        borderRadius: { topLeft: 4, topRight: 4 },
-        borderSkipped: false,
+        data: chronos.map(r => r.summary.passed),
+        backgroundColor: 'rgba(0,255,136,0.65)',
+        borderRadius: 5, borderSkipped: false,
       },
       {
-        label: 'Échoués',
-        data: runsChron.map(r => r.summary.failed + r.summary.errors),
-        backgroundColor: 'rgba(248,113,113,0.7)',
-        borderRadius: { topLeft: 4, topRight: 4 },
-        borderSkipped: false,
+        label: 'Échoués + Erreurs',
+        data: chronos.map(r => r.summary.failed + r.summary.errors),
+        backgroundColor: 'rgba(255,0,110,0.65)',
+        borderRadius: 5, borderSkipped: false,
       }
     ]
   },
   options: {
     responsive: true, maintainAspectRatio: false,
-    plugins: { legend: leg },
+    plugins: { legend: legendStyle },
     scales: {
-      x: { stacked: true, ticks: tick, grid },
-      y: { stacked: true, ticks: tick, grid, beginAtZero: true }
+      x: { stacked: true, ticks: tickStyle, grid: { color: gridColor } },
+      y: { stacked: true, ticks: tickStyle, grid: { color: gridColor }, beginAtZero: true }
     }
   }
 });
 
-// 4. API latency horizontal bar
+/* 4 — Latence par API (barres horizontales) */
 const perApi = {{ last_run.per_api | tojson }};
 const apiNames = Object.keys(perApi);
-const apiColors = ['rgba(110,231,247,.75)','rgba(167,139,250,.75)','rgba(251,191,36,.75)','rgba(52,211,153,.75)','rgba(248,113,113,.75)'];
+const neonColors = ['rgba(0,212,255,0.75)','rgba(191,0,255,0.75)','rgba(255,179,0,0.75)','rgba(0,255,136,0.75)','rgba(255,0,110,0.75)'];
 
-new Chart(document.getElementById('cApiLat'), {
+new Chart(document.getElementById('cApiBar'), {
   type: 'bar',
   data: {
     labels: apiNames,
     datasets: [{
       label: 'Latence moy. (ms)',
       data: apiNames.map(k => perApi[k].latency_avg_ms),
-      backgroundColor: apiColors.slice(0, apiNames.length),
-      borderRadius: 6,
-      borderSkipped: false,
+      backgroundColor: neonColors.slice(0, apiNames.length),
+      borderRadius: 6, borderSkipped: false,
     }]
   },
   options: {
@@ -545,8 +665,8 @@ new Chart(document.getElementById('cApiLat'), {
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
-      x: { ticks: tick, grid, beginAtZero: true },
-      y: { ticks: { ...tick, font: { family: 'DM Mono', size: 11 } }, grid: { display: false } }
+      x: { ticks: tickStyle, grid: { color: gridColor }, beginAtZero: true },
+      y: { ticks: { ...tickStyle, font: { size: 11 } }, grid: { display: false } }
     }
   }
 });
